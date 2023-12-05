@@ -153,7 +153,7 @@ function padPart (part, length) {
     return part;
 }
 
-export const IPv4 = (function () {
+const IPv4 = (function () {
     // Constructs a new IPv4 address from an array of four octets
     // in network order (MSB first)
     // Verifies the input.
@@ -492,7 +492,7 @@ IPv4.subnetMaskFromPrefixLength = function (prefix) {
     return new this(octets);
 };
 
-export const IPv6 = (function () {
+const IPv6 = (function () {
     // Constructs an IPv6 address from an array of eight 16 - bit parts
     // or sixteen 8 - bit parts in network order(MSB first).
     // Throws an error if the input is invalid.
@@ -898,7 +898,7 @@ IPv6.subnetMaskFromPrefixLength = function (prefix) {
 };
 
 // Try to parse an array in network order (MSB first) for IPv4 and IPv6
-export function fromByteArray (bytes) {
+function fromByteArray (bytes) {
     const length = bytes.length;
 
     if (length === 4) {
@@ -911,14 +911,14 @@ export function fromByteArray (bytes) {
 }
 
 // Checks if the address is valid IP address
-export function isValid (string) {
+function isValid (string) {
     return IPv6.isValid(string) || IPv4.isValid(string);
 }
 
 
 // Attempts to parse an IP Address, first through IPv6 then IPv4.
 // Throws an error if it could not be parsed.
-export function parse (string) {
+function parse (string) {
     if (IPv6.isValid(string)) {
         return IPv6.parse(string);
     } else if (IPv4.isValid(string)) {
@@ -930,7 +930,7 @@ export function parse (string) {
 
 // Attempt to parse CIDR notation, first through IPv6 then IPv4.
 // Throws an error if it could not be parsed.
-export function parseCIDR (string) {
+function parseCIDR (string) {
     try {
         return IPv6.parseCIDR(string);
     } catch (e) {
@@ -943,7 +943,7 @@ export function parseCIDR (string) {
 }
 
 // Parse an address and return plain IPv4 address if it is an IPv4-mapped address
-export function process (string) {
+function process (string) {
     const addr = this.parse(string);
 
     if (addr.kind() === 'ipv6' && addr.isIPv4MappedAddress()) {
@@ -956,7 +956,7 @@ export function process (string) {
 // An utility function to ease named range matching. See examples below.
 // rangeList can contain both IPv4 and IPv6 subnet entries and will not throw errors
 // on matching IPv4 addresses to IPv6 ranges or vice versa.
-export function subnetMatch (address, rangeList, defaultName) {
+function subnetMatch (address, rangeList, defaultName) {
     let i, rangeName, rangeSubnets, subnet;
 
     if (defaultName === undefined || defaultName === null) {
@@ -982,3 +982,5 @@ export function subnetMatch (address, rangeList, defaultName) {
 
     return defaultName;
 }
+
+export { IPv4, IPv6, fromByteArray, isValid, parse, parseCIDR, process, subnetMatch };
