@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"exactOptionalPropertyTypes": true,
+		"noUncheckedIndexedAccess": true,
+		"strict": true,
+		"useUnknownInCatchVariables": true,
+		"strictNullChecks": true
+	},
+	"extends": "..",
+	"include": [ "**/*" ]
+}
