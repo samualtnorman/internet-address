@@ -1,6 +1,6 @@
 export type IPvXRangeDefaults = 'unicast' | 'unspecified' | 'multicast' | 'linkLocal' | 'loopback' | 'reserved';
 export type IPv4Range = IPvXRangeDefaults | 'broadcast' | 'carrierGradeNat' | 'private';
-export type IPv6Range = IPvXRangeDefaults | 'uniqueLocal' | 'ipv4Mapped' | 'rfc6145' | 'rfc6052' | '6to4' | 'teredo';
+export type IPv6Range = IPvXRangeDefaults | 'uniqueLocal' | 'ipv4Mapped' | 'rfc6145' | 'rfc6052' | '6to4' | 'teredo' | "benchmarking" | "amt" | "as112v6" | "deprecated" | "orchid2";
 
 export type RangeList<T extends IPv4 | IPv6> = Map<T extends IPv4 ? IPv4Range : IPv6Range, { ip: T, bits: number }[]>
 
@@ -34,77 +34,44 @@ const ipv6Regexes = {
 };
 
 // Expand :: in an IPv6 address or address part consisting of `parts` groups.
-function expandIPv6(string: string, parts: number): { parts: number[]; zoneId: string | undefined; } | null {
+function expandIPv6(string: string, parts: number): { parts: number[], zoneId: string | undefined } | null {
 	// More than one '::' means invalid adddress
-	if (string.indexOf('::') !== string.lastIndexOf('::')) {
-		return null;
-	}
+	if (string.includes("::", string.indexOf('::') + 1))
+		return null
 
-	let colonCount = 0;
-	let lastColon = -1;
-	let zoneId = (string.match(ipv6Regexes.zoneIndex) || [])[0];
-	let replacement, replacementCount;
+	let zoneId = string.match(ipv6Regexes.zoneIndex)?.[0]
 
 	// Remove zone index and save it for later
 	if (zoneId) {
-		zoneId = zoneId.substring(1);
-		string = string.replace(/%.+$/, '');
+		zoneId = zoneId.substring(1)
+		string = string.replace(/%.+$/, "")
 	}
 
-	// How many parts do we already have?
-	while ((lastColon = string.indexOf(':', lastColon + 1)) >= 0) {
-		colonCount++;
-	}
+	let /** How many parts do we already have? */ colonCount = string.match(/:/g)?.length ?? 0
 
 	// 0::0 is two parts more than ::
-	if (string.substr(0, 2) === '::') {
-		colonCount--;
-	}
+	if (string.slice(0, 2) === "::")
+		colonCount--
 
-	if (string.substr(-2, 2) === '::') {
-		colonCount--;
-	}
+	if (string.slice(-2) === "::")
+		colonCount--
 
 	// The following loop would hang if colonCount > parts
-	if (colonCount > parts) {
-		return null;
-	}
-
-	// replacement = ':' + '0:' * (parts - colonCount)
-	replacementCount = parts - colonCount;
-	replacement = ':';
-	while (replacementCount--) {
-		replacement += '0:';
-	}
+	if (colonCount > parts)
+		return null
 
 	// Insert the missing zeroes
-	string = string.replace('::', replacement);
+	string = string.replace('::', (':' + "0:".repeat(parts - colonCount)))
 
 	// Trim any garbage which may be hanging around if :: was at the edge in
 	// the source strin
-	if (string[0] === ':') {
-		string = string.slice(1);
-	}
+	if (string[0] === ':')
+		string = string.slice(1)
 
-	if (string[string.length - 1] === ':') {
-		string = string.slice(0, -1);
-	}
+	if (string[string.length - 1] === ':')
+		string = string.slice(0, -1)
 
-	const partsArray = (function () {
-		const refs = string.split(':');
-		const results = [];
-
-		for (const ref of refs) {
-			results.push(parseInt(ref, 16));
-		}
-
-		return results;
-	})();
-
-	return {
-		parts: partsArray,
-		zoneId: zoneId
-	};
+	return { parts: string.split(':').map(hex => parseInt(hex, 16)), zoneId }
 }
 
 // A generic CIDR (Classless Inter-Domain Routing) RFC1518 range matcher.
@@ -135,19 +102,19 @@ function matchCIDR (first: { [index: number]: number, length: number }, second: 
 
 function parseIntAuto (string: string) {
 	// Hexadedimal base 16 (0x#)
-	if (hexRegex.test(string)) {
-		return parseInt(string, 16);
-	}
+	if (hexRegex.test(string))
+		return parseInt(string, 16)
+
 	// While octal representation is discouraged by ECMAScript 3
 	// and forbidden by ECMAScript 5, we silently allow it to
 	// work only if the rest of the string has numbers less than 8.
 	if (string[0] === '0' && !isNaN(parseInt(string[1]!, 10))) {
-		if (octalRegex.test(string)) {
-			return parseInt(string, 8);
-		}
+		if (octalRegex.test(string))
+			return parseInt(string, 8)
 
-		throw Error(`ipaddr: cannot parse ${string} as octal`);
+		throw Error(`ipaddr: cannot parse ${string} as octal`)
 	}
+
 	// Always include the base 10 radix!
 	return parseInt(string, 10);
 }
@@ -165,64 +132,56 @@ export class IPv4 {
 	// Constructs a new IPv4 address from an array of four octets
 	// in network order (MSB first)
 	// Verifies the input.
-	constructor(public octets: Uint8Array) {
+	constructor(/** 4 bytes */ public octets: Uint8Array) {
 		if (octets.length !== 4)
 			throw Error("ipaddr: ipv4 octet count should be 4")
 	}
 
-	static from4Bytes(byte0: number, byte1: number, byte2: number, byte3: number): IPv4 {
+	static fromBytes(byte0: number, byte1: number, byte2: number, byte3: number): IPv4 {
 		return new IPv4(new Uint8Array([ byte0, byte1, byte2, byte3 ]))
 	}
 
 	// Special IPv4 address ranges.
 	// See also https://en.wikipedia.org/wiki/Reserved_IP_addresses
 	static SpecialRanges: RangeList<IPv4> = new Map([
-		[ "unspecified", [ { ip: IPv4.from4Bytes(0, 0, 0, 0), bits: 8 } ] ],
-		[ "broadcast", [ { ip: IPv4.from4Bytes(255, 255, 255, 255), bits: 32 } ] ],
+		[ "unspecified", [ { ip: IPv4.fromBytes(0, 0, 0, 0), bits: 8 } ] ],
+		[ "broadcast", [ { ip: IPv4.fromBytes(255, 255, 255, 255), bits: 32 } ] ],
 		// RFC3171
-		[ "multicast", [ { ip: IPv4.from4Bytes(224, 0, 0, 0), bits: 4 } ] ],
+		[ "multicast", [ { ip: IPv4.fromBytes(224, 0, 0, 0), bits: 4 } ] ],
 		// RFC3927
-		[ "linkLocal", [ { ip: IPv4.from4Bytes(169, 254, 0, 0), bits: 16 } ] ],
+		[ "linkLocal", [ { ip: IPv4.fromBytes(169, 254, 0, 0), bits: 16 } ] ],
 		// RFC5735
-		[ "loopback", [ { ip: IPv4.from4Bytes(127, 0, 0, 0), bits: 8 } ] ],
+		[ "loopback", [ { ip: IPv4.fromBytes(127, 0, 0, 0), bits: 8 } ] ],
 		// RFC6598
-		[ "carrierGradeNat", [ { ip: IPv4.from4Bytes(100, 64, 0, 0), bits: 10 } ] ],
+		[ "carrierGradeNat", [ { ip: IPv4.fromBytes(100, 64, 0, 0), bits: 10 } ] ],
 		// RFC1918
 		[ "private", [
-			{ ip: IPv4.from4Bytes(10, 0, 0, 0), bits: 8 },
-			{ ip: IPv4.from4Bytes(172, 16, 0, 0), bits: 12 },
-			{ ip: IPv4.from4Bytes(192, 168, 0, 0), bits: 16 }
+			{ ip: IPv4.fromBytes(10, 0, 0, 0), bits: 8 },
+			{ ip: IPv4.fromBytes(172, 16, 0, 0), bits: 12 },
+			{ ip: IPv4.fromBytes(192, 168, 0, 0), bits: 16 }
 		] ],
 		// Reserved and testing-only ranges; RFCs 5735, 5737, 2544, 1700
 		[ "reserved", [
-			{ ip: IPv4.from4Bytes(192, 0, 0, 0), bits: 24 },
-			{ ip: IPv4.from4Bytes(192, 0, 2, 0), bits: 24 },
-			{ ip: IPv4.from4Bytes(192, 88, 99, 0), bits: 24 },
-			{ ip: IPv4.from4Bytes(198, 18, 0, 0), bits: 15 },
-			{ ip: IPv4.from4Bytes(198, 51, 100, 0), bits: 24 },
-			{ ip: IPv4.from4Bytes(203, 0, 113, 0), bits: 24 },
-			{ ip: IPv4.from4Bytes(240, 0, 0, 0), bits: 4 }
+			{ ip: IPv4.fromBytes(192, 0, 0, 0), bits: 24 },
+			{ ip: IPv4.fromBytes(192, 0, 2, 0), bits: 24 },
+			{ ip: IPv4.fromBytes(192, 88, 99, 0), bits: 24 },
+			{ ip: IPv4.fromBytes(198, 18, 0, 0), bits: 15 },
+			{ ip: IPv4.fromBytes(198, 51, 100, 0), bits: 24 },
+			{ ip: IPv4.fromBytes(203, 0, 113, 0), bits: 24 },
+			{ ip: IPv4.fromBytes(240, 0, 0, 0), bits: 4 }
 		] ]
 	])
 
 	/** Checks if this address matches other one within given CIDR range. */
-	match(what: IPv4 | IPv6, bits: number): boolean {
-		if (what instanceof IPv6) {
-			throw Error('ipaddr: cannot match ipv4 address with non-ipv4 one');
-		}
-
-		return matchCIDR(this.octets, what.octets, 8, bits);
+	match(what: IPv4, bits: number): boolean {
+		return matchCIDR(this.octets, what.octets, 8, bits)
 	}
 
-	// returns a number of leading ones in IPv4 address, making sure that
-	// the rest is a solid sequence of 0's (valid netmask)
-	// returns either the CIDR length or null if mask is not valid
+	/** returns a number of leading ones in IPv4 address, making sure that
+	  * the rest is a solid sequence of 0's (valid netmask)
+	  * returns either the CIDR length or null if mask is not valid */
 	prefixLengthFromSubnetMask(): number | null {
-		let cidr = 0;
-		// non-zero encountered stop scanning for zeroes
-		let stop = false;
-		// number of zeroes in octet
-		const zerotable = {
+		const /** number of zeroes in octet */ zerotable: Record<number, number> = {
 			0: 8,
 			128: 7,
 			192: 6,
@@ -234,24 +193,25 @@ export class IPv4 {
 			255: 0
 		}
 
+		let /** non-zero encountered stop scanning for zeroes */ stop = false
+		let cidr = 0
+
 		for (const octet of this.octets) {
-			if (octet in zerotable) {
-				const zeros = zerotable[octet as keyof typeof zerotable];
-				if (stop && zeros !== 0) {
+			const zeros = zerotable[octet]
+
+			if (zeros != undefined) {
+				if (stop && zeros != 0)
 					return null;
-				}
 
-				if (zeros !== 8) {
-					stop = true;
-				}
+				if (zeros != 8)
+					stop = true
 
-				cidr += zeros;
-			} else {
-				return null;
-			}
+				cidr += zeros
+			} else
+				return null
 		}
 
-		return 32 - cidr;
+		return 32 - cidr
 	}
 
 	// Checks if the address corresponds to one of the special ranges.
@@ -259,8 +219,8 @@ export class IPv4 {
 		return subnetMatch(this, IPv4.SpecialRanges);
 	}
 
-	// Returns an array of byte-sized values in network order (MSB first)
-	toByteArray(): number[] {
+	/** Returns an array of byte-sized values in network order (MSB first) */
+	toByteArray(): Uint8Array {
 		return this.octets.slice();
 	}
 
@@ -282,20 +242,18 @@ export class IPv4 {
 	// A utility function to return broadcast address given the IPv4 interface and prefix length in CIDR notation
 	static broadcastAddressFromCIDR(addr: string): IPv4 {
 		try {
-			const cidr = this.parseCIDR(addr);
-			const ipInterfaceOctets = cidr[0].toByteArray();
-			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray();
-			const octets = [];
-			let i = 0;
-			while (i < 4) {
-				// Broadcast address is bitwise OR between ip interface and inverted mask
-				octets.push(parseInt(ipInterfaceOctets[i], 10) | parseInt(subnetMaskOctets[i], 10) ^ 255);
-				i++;
-			}
+			const cidr = this.parseCIDR(addr)
+			const ipInterfaceOctets = cidr[0].toByteArray()
+			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray()
 
-			return new this(octets);
+			return this.fromBytes(
+				ipInterfaceOctets[0]! | (subnetMaskOctets[0]! ^ 255),
+				ipInterfaceOctets[1]! | (subnetMaskOctets[1]! ^ 255),
+				ipInterfaceOctets[2]! | (subnetMaskOctets[2]! ^ 255),
+				ipInterfaceOctets[3]! | (subnetMaskOctets[3]! ^ 255)
+			)
 		} catch (e) {
-			throw Error('ipaddr: the address does not have IPv4 CIDR format');
+			throw Error('ipaddr: the address does not have IPv4 CIDR format')
 		}
 	}
 
@@ -307,75 +265,72 @@ export class IPv4 {
 	// Checks if a given string is a valid IPv4 address.
 	static isValid(addr: string): boolean {
 		try {
-			new this(this.parser(addr));
-			return true;
+			const parsed = this.parser(addr)
+
+			if (!parsed)
+				return false
+
+			this.fromBytes(...parsed)
+
+			return true
 		} catch (e) {
-			return false;
+			return false
 		}
 	}
 
-	// Checks if a given string is a full four-part IPv4 Address.
+	/** Checks if a given string is a full four-part IPv4 Address. */
 	static isValidFourPartDecimal(addr: string): boolean {
-		if (IPv4.isValid(addr) && addr.match(/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){3}$/)) {
-			return true;
-		} else {
-			return false;
-		}
+		return IPv4.isValid(addr) && Boolean(addr.match(/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){3}$/))
 	}
 
-	// A utility function to return network address given the IPv4 interface and prefix length in CIDR notation
+	/** A utility function to return network address given the IPv4 interface and prefix length in CIDR notation */
 	static networkAddressFromCIDR(addr: string): IPv4 {
-		let cidr, i, ipInterfaceOctets, octets, subnetMaskOctets;
-
 		try {
-			cidr = this.parseCIDR(addr);
-			ipInterfaceOctets = cidr[0].toByteArray();
-			subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray();
-			octets = [];
-			i = 0;
-			while (i < 4) {
-				// Network address is bitwise AND between ip interface and mask
-				octets.push(parseInt(ipInterfaceOctets[i], 10) & parseInt(subnetMaskOctets[i], 10));
-				i++;
-			}
+			const cidr = this.parseCIDR(addr);
+			const ipInterfaceOctets = cidr[0].toByteArray();
+			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray();
 
-			return new this(octets);
+			return this.fromBytes(
+				ipInterfaceOctets[0]! & subnetMaskOctets[0]!,
+				ipInterfaceOctets[1]! & subnetMaskOctets[1]!,
+				ipInterfaceOctets[2]! & subnetMaskOctets[2]!,
+				ipInterfaceOctets[3]! & subnetMaskOctets[3]!
+			)
 		} catch (e) {
-			throw Error('ipaddr: the address does not have IPv4 CIDR format');
+			throw Error("ipaddr: the address does not have IPv4 CIDR format")
 		}
 	}
 
-	// Tries to parse and validate a string with IPv4 address.
-	// Throws an error if it fails.
+	/** Tries to parse and validate a string with IPv4 address.
+	  * Throws an error if it fails. */
 	static parse(addr: string): IPv4 {
 		const parts = this.parser(addr);
 
 		if (parts === null) {
-			throw Error('ipaddr: string is not formatted like an IPv4 Address');
+			throw Error("ipaddr: string is not formatted like an IPv4 Address");
 		}
 
-		return this.from4Bytes(...parts);
+		return this.fromBytes(...parts);
 	};
 
-	// Parses the string as an IPv4 Address with CIDR Notation.
-	static parseCIDR(addr: string): [IPv4, number] {
-		let match;
+	/** Parses the string as an IPv4 Address with CIDR Notation. */
+	static parseCIDR(addr: string): [ IPv4, number ] {
+		const match = addr.match(/^(.+)\/(\d+)$/)
 
-		if ((match = addr.match(/^(.+)\/(\d+)$/))) {
-			const maskLength = parseInt(match[2]);
-			if (maskLength >= 0 && maskLength <= 32) {
-				const parsed = [this.parse(match[1]), maskLength];
-				Object.defineProperty(parsed, 'toString', {
-					value: function () {
-						return this.join('/');
+		if (match) {
+			const maskLength = Number(match[2])
+
+			if (match[1] && maskLength >= 0 && maskLength <= 32) {
+				return Object.defineProperty([ this.parse(match[1]), maskLength ], "toString", {
+					value() {
+						return this.join("/")
 					}
-				});
-				return parsed;
+				})
 			}
 		}
 
-		throw Error('ipaddr: string is not formatted like an IPv4 CIDR range');
-	};
+		throw Error("ipaddr: string is not formatted like an IPv4 CIDR range")
+	}
 
 	// Classful variants (like a.b, where a is an octet, and b is a 24-bit
 	// value representing last three octets; this corresponds to a class C
@@ -386,15 +341,15 @@ export class IPv4 {
 		// parseInt recognizes all that octal & hexadecimal weirdness for us
 		if ((match = string.match(ipv4Regexes.fourOctet))) {
 			return [
-				parseIntAuto(match[1]),
-				parseIntAuto(match[2]),
-				parseIntAuto(match[3]),
-				parseIntAuto(match[4])
+				parseIntAuto(match[1]!),
+				parseIntAuto(match[2]!),
+				parseIntAuto(match[3]!),
+				parseIntAuto(match[4]!)
 			]
 		}
 
 		if ((match = string.match(ipv4Regexes.longValue))) {
-			const value = parseIntAuto(match[1]);
+			const value = parseIntAuto(match[1]!);
 
 			if (value > 0xffffffff || value < 0)
 				throw Error('ipaddr: address outside defined range')
@@ -408,8 +363,8 @@ export class IPv4 {
 		}
 
 		if ((match = string.match(ipv4Regexes.twoOctet))) {
-			const firstOctet = parseIntAuto(match[1])
-			const lastOctets = parseIntAuto(match[2]);
+			const firstOctet = parseIntAuto(match[1]!)
+			const lastOctets = parseIntAuto(match[2]!);
 
 			if (firstOctet > 0xff || firstOctet < 0 || lastOctets > 0xffffff || lastOctets < 0)
 				throw Error('ipaddr: address outside defined range')
@@ -418,11 +373,9 @@ export class IPv4 {
 		}
 
 		if ((match = string.match(ipv4Regexes.threeOctet))) {
-			const ref = match.slice(1, 5);
-			const results = [];
-			const firstOctet = parseIntAuto(ref[0]);
-			const secondOctet = parseIntAuto(ref[1]);
-			const lastOctets = parseIntAuto(ref[2]);
+			const firstOctet = parseIntAuto(match[1]!);
+			const secondOctet = parseIntAuto(match[2]!);
+			const lastOctets = parseIntAuto(match[3]!);
 
 			if (
 				firstOctet > 0xff || firstOctet < 0 || secondOctet > 0xff ||
@@ -430,25 +383,18 @@ export class IPv4 {
 			)
 				throw Error('ipaddr: address outside defined range')
 
-			return [
-				firstOctet,
-				secondOctet,
-				(lastOctets >> 8) & 0xff,
-				lastOctets & 0xff
-			]
+			return [ firstOctet, secondOctet, (lastOctets >> 8) & 0xff, lastOctets & 0xff ]
 		}
 
-		return null;
+		return null
 	}
 
-	// A utility function to return subnet mask in IPv4 format given the prefix length
+	/** A utility function to return subnet mask in IPv4 format given the prefix length */
 	static subnetMaskFromPrefixLength(prefix: number): IPv4 {
-		prefix = parseInt(prefix);
-		if (prefix < 0 || prefix > 32) {
-			throw Error('ipaddr: invalid IPv4 prefix length');
-		}
+		if (prefix < 0 || prefix > 32)
+			throw Error("ipaddr: invalid IPv4 prefix length")
 
-		const octets = [0, 0, 0, 0];
+		const octets: [ number, number, number, number ] = [ 0, 0, 0, 0 ]
 		let j = 0;
 		const filledOctetCount = Math.floor(prefix / 8);
 
@@ -461,62 +407,94 @@ export class IPv4 {
 			octets[filledOctetCount] = Math.pow(2, prefix % 8) - 1 << 8 - (prefix % 8);
 		}
 
-		return new this(octets);
+		return this.fromBytes(...octets);
 	};
 }
 
 export class IPv6  {
-	parts: number[]
+	// /** Constructs an IPv6 address from an array of eight 16 - bit parts
+	//   * or sixteen 8 - bit parts in network order(MSB first).
+	//   * Throws an error if the input is invalid. */
+	// constructor(parts: number[], public zoneId?: string) {
+	// 	if (parts.length == 16) {
+	// 		this.parts = new Uint16Array([
+	// 			(parts[0]! << 8) | parts[1]!,
+	// 			(parts[2]! << 8) | parts[3]!,
+	// 			(parts[4]! << 8) | parts[5]!,
+	// 			(parts[6]! << 8) | parts[7]!,
+	// 			(parts[8]! << 8) | parts[9]!,
+	// 			(parts[10]! << 8) | parts[11]!,
+	// 			(parts[12]! << 8) | parts[13]!,
+	// 			(parts[14]! << 8) | parts[15]!
+	// 		])
+	// 	} else if (parts.length == 8) {
+	// 		this.parts = new Uint16Array(parts)
+	// 	} else
+	// 		throw Error('ipaddr: ipv6 part count should be 8 or 16')
+	// }
 
-	// Constructs an IPv6 address from an array of eight 16 - bit parts
-	// or sixteen 8 - bit parts in network order(MSB first).
-	// Throws an error if the input is invalid.
-	constructor(parts: number[], public zoneId?: string) {
-		let i, part;
+	private constructor(
+		/** 8 big-endian 16-bit unsigned integers */ public hextets: Uint16Array,
+		public zoneId?: string
+	) {}
 
-		if (parts.length == 16) {
-			this.parts = [];
-			for (i = 0; i <= 14; i += 2) {
-				this.parts.push((parts[i] << 8) | parts[i + 1]);
-			}
-		} else if (parts.length == 8) {
-			this.parts = parts;
-		} else
-			throw Error('ipaddr: ipv6 part count should be 8 or 16')
+	static fromBytes(
+		byte0: number, byte1: number, byte2: number, byte3: number, byte4: number, byte5: number, byte6: number,
+		byte7: number, byte8: number, byte9: number, byte10: number, byte11: number, byte12: number, byte13: number,
+		byte14: number, byte15: number, zoneId?: string
+	) {
+		return new this(new Uint16Array(new Uint8Array([
+			byte1,
+			byte0,
+			byte3,
+			byte2,
+			byte5,
+			byte4,
+			byte7,
+			byte6,
+			byte9,
+			byte8,
+			byte11,
+			byte10,
+			byte13,
+			byte12,
+			byte15,
+			byte14,
+		]).buffer), zoneId)
+	}
 
-		for (i = 0; i < this.parts.length; i++) {
-			part = this.parts[i];
-			if (!((0 <= part && part <= 0xffff))) {
-				throw Error('ipaddr: ipv6 part should fit in 16 bits');
-			}
-		}
+	static fromHextets(
+		hextet0: number, hextet1: number, hextet2: number, hextet3: number, hextet4: number, hextet5: number,
+		hextet6: number, hextet7: number, zoneId?: string
+	) {
+		return new this(new Uint16Array([ hextet0, hextet1, hextet2, hextet3, hextet4, hextet5, hextet6, hextet7 ]), zoneId)
 	}
 
 	// Special IPv6 ranges
-	static SpecialRanges = {
+	static SpecialRanges: RangeList<IPv6> = new Map([
 		// RFC4291, here and after
-		unspecified: [new IPv6([0, 0, 0, 0, 0, 0, 0, 0]), 128],
-		linkLocal: [new IPv6([0xfe80, 0, 0, 0, 0, 0, 0, 0]), 10],
-		multicast: [new IPv6([0xff00, 0, 0, 0, 0, 0, 0, 0]), 8],
-		loopback: [new IPv6([0, 0, 0, 0, 0, 0, 0, 1]), 128],
-		uniqueLocal: [new IPv6([0xfc00, 0, 0, 0, 0, 0, 0, 0]), 7],
-		ipv4Mapped: [new IPv6([0, 0, 0, 0, 0, 0xffff, 0, 0]), 96],
+		[ "unspecified", [ { ip: this.fromHextets(0, 0, 0, 0, 0, 0, 0, 0), bits: 128 } ] ],
+		[ "linkLocal", [ { ip: this.fromHextets(0xfe80, 0, 0, 0, 0, 0, 0, 0), bits: 10 } ] ],
+		[ "multicast", [ { ip: this.fromHextets(0xff00, 0, 0, 0, 0, 0, 0, 0), bits: 8 } ] ],
+		[ "loopback", [ { ip: this.fromHextets(0, 0, 0, 0, 0, 0, 0, 1), bits: 128 } ] ],
+		[ "uniqueLocal", [ { ip: this.fromHextets(0xfc00, 0, 0, 0, 0, 0, 0, 0), bits: 7 } ] ],
+		[ "ipv4Mapped", [ { ip: this.fromHextets(0, 0, 0, 0, 0, 0xffff, 0, 0), bits: 96 } ] ],
 		// RFC6145
-		rfc6145: [new IPv6([0, 0, 0, 0, 0xffff, 0, 0, 0]), 96],
+		[ "rfc6145", [ { ip: this.fromHextets(0, 0, 0, 0, 0xffff, 0, 0, 0), bits: 96 } ] ],
 		// RFC6052
-		rfc6052: [new IPv6([0x64, 0xff9b, 0, 0, 0, 0, 0, 0]), 96],
+		[ "rfc6052", [ { ip: this.fromHextets(0x64, 0xff9b, 0, 0, 0, 0, 0, 0), bits: 96 } ] ],
 		// RFC3056
-		'6to4': [new IPv6([0x2002, 0, 0, 0, 0, 0, 0, 0]), 16],
+		[ "6to4", [ { ip: this.fromHextets(0x2002, 0, 0, 0, 0, 0, 0, 0), bits: 16 } ] ],
 		// RFC6052, RFC6146
-		teredo: [new IPv6([0x2001, 0, 0, 0, 0, 0, 0, 0]), 32],
+		[ "teredo", [ { ip: this.fromHextets(0x2001, 0, 0, 0, 0, 0, 0, 0), bits: 32 } ] ],
 		// RFC4291
-		reserved: [[new IPv6([0x2001, 0xdb8, 0, 0, 0, 0, 0, 0]), 32]],
-		benchmarking: [new IPv6([0x2001, 0x2, 0, 0, 0, 0, 0, 0]), 48],
-		amt: [new IPv6([0x2001, 0x3, 0, 0, 0, 0, 0, 0]), 32],
-		as112v6: [new IPv6([0x2001, 0x4, 0x112, 0, 0, 0, 0, 0]), 48],
-		deprecated: [new IPv6([0x2001, 0x10, 0, 0, 0, 0, 0, 0]), 28],
-		orchid2: [new IPv6([0x2001, 0x20, 0, 0, 0, 0, 0, 0]), 28]
-	};
+		[ "reserved", [ { ip: this.fromHextets(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0), bits: 32 } ] ],
+		[ "benchmarking", [ { ip: this.fromHextets(0x2001, 0x2, 0, 0, 0, 0, 0, 0), bits: 48 } ] ],
+		[ "amt", [ { ip: this.fromHextets(0x2001, 0x3, 0, 0, 0, 0, 0, 0), bits: 32 } ] ],
+		[ "as112v6", [ { ip: this.fromHextets(0x2001, 0x4, 0x112, 0, 0, 0, 0, 0), bits: 48 } ] ],
+		[ "deprecated", [ { ip: this.fromHextets(0x2001, 0x10, 0, 0, 0, 0, 0, 0), bits: 28 } ] ],
+		[ "orchid2", [ { ip: this.fromHextets(0x2001, 0x20, 0, 0, 0, 0, 0, 0), bits: 28 } ] ]
+	])
 
 	// Checks if this address is an IPv4-mapped IPv6 address.
 	isIPv4MappedAddress(): boolean {
@@ -524,31 +502,15 @@ export class IPv6  {
 	};
 
 	// Checks if this address matches other one within given CIDR range.
-	match(what: IPv4 | IPv6 | [IPv4 | IPv6, number], bits?: number): boolean {
-		let ref;
-
-		if (bits === undefined) {
-			ref = what;
-			what = ref[0];
-			bits = ref[1];
-		}
-
-		if (what.kind() !== 'ipv6') {
-			throw Error('ipaddr: cannot match ipv6 address with non-ipv6 one');
-		}
-
-		return matchCIDR(this.parts, what.parts, 16, bits);
+	match(what: IPv6, bits: number): boolean {
+		return matchCIDR(this.hextets, what.hextets, 16, bits);
 	};
 
 	// returns a number of leading ones in IPv6 address, making sure that
 	// the rest is a solid sequence of 0's (valid netmask)
 	// returns either the CIDR length or null if mask is not valid
 	prefixLengthFromSubnetMask(): number | null {
-		let cidr = 0;
-		// non-zero encountered stop scanning for zeroes
-		let stop = false;
-		// number of zeroes in octet
-		const zerotable = {
+		const /** number of zeroes in octet */ zerotable: Record<number, number> = {
 			0: 16,
 			32768: 15,
 			49152: 14,
@@ -566,48 +528,38 @@ export class IPv6  {
 			65532: 2,
 			65534: 1,
 			65535: 0
-		};
-		let part, zeros;
-
-		for (let i = 7; i >= 0; i -= 1) {
-			part = this.parts[i];
-			if (part in zerotable) {
-				zeros = zerotable[part];
-				if (stop && zeros !== 0) {
-					return null;
-				}
-
-				if (zeros !== 16) {
-					stop = true;
-				}
-
-				cidr += zeros;
-			} else {
-				return null;
-			}
 		}
 
-		return 128 - cidr;
+		let /** non-zero encountered stop scanning for zeroes */ stop = false
+		let cidr = 0
+
+		for (const part in this.hextets) {
+			const zeros = zerotable[part]
+
+			if (zeros != undefined) {
+				if (stop && zeros !== 0)
+					return null
+
+				if (zeros !== 16)
+					stop = true
+
+				cidr += zeros
+			} else
+				return null
+		}
+
+		return 128 - cidr
 	};
 
 
 	// Checks if the address corresponds to one of the special ranges.
 	range(): IPv6Range {
-		return subnetMatch(this, this.SpecialRanges);
-	};
+		return subnetMatch(this, IPv6.SpecialRanges)
+	}
 
-	// Returns an array of byte-sized values in network order (MSB first)
-	toByteArray(): number[] {
-		let part;
-		const bytes = [];
-		const ref = this.parts;
-		for (let i = 0; i < ref.length; i++) {
-			part = ref[i];
-			bytes.push(part >> 8);
-			bytes.push(part & 0xff);
-		}
-
-		return bytes;
+	/** Returns an array of byte-sized values in network order (MSB first) */
+	toByteArray(): Uint8Array {
+		return new Uint8Array(this.hextets.buffer)
 	};
 
 	// Returns the address in expanded format with all zeroes included, like
@@ -616,7 +568,7 @@ export class IPv6  {
 		let addr
 		const results = []
 
-		for (const part of this.parts)
+		for (const part of this.hextets)
 			results.push(padPart(part.toString(16), 4))
 
 		addr = results.join(':')
@@ -635,33 +587,22 @@ export class IPv6  {
 		if (!this.isIPv4MappedAddress())
 			throw Error('ipaddr: trying to convert a generic ipv6 address to ipv4')
 
-		const [ high, low ] = this.parts.slice(-2);
+		const u8View = new Uint8Array(this.hextets.buffer)
 
-		return IPv4.from4Bytes(high >> 8, high & 0xff, low >> 8, low & 0xff);
-	};
+		return IPv4.fromBytes(
+			u8View[13]!,
+			u8View[12]!,
+			u8View[15]!,
+			u8View[14]!
+		)
+	}
 
-	// Returns the address in expanded format with all zeroes included, like
-	// 2001:db8:8:66:0:0:0:1
-	//
-	// Deprecated: use toFixedLengthString() instead.
+	/** Returns the address in expanded format with all zeroes included, like `2001:db8:8:66:0:0:0:1`
+	  *
+	  * @deprecated use toFixedLengthString() instead. */
 	toNormalizedString(): string {
-		const addr = ((function () {
-			const results = [];
-
-			for (let i = 0; i < this.parts.length; i++) {
-				results.push(this.parts[i].toString(16));
-			}
-
-			return results;
-		}).call(this)).join(':');
-
-		let suffix = '';
-
-		if (this.zoneId) {
-			suffix = `%${this.zoneId}`;
-		}
-
-		return addr + suffix;
+		return `${[ ...this.hextets ].map(hextet => hextet.toString(16)).join(':')}${
+			this.zoneId ? `%${this.zoneId}` : ""}`
 	};
 
 	// Returns the address in compact, human-readable format like
@@ -696,7 +637,7 @@ export class IPv6  {
 	};
 
 	// A utility function to return broadcast address given the IPv6 interface and prefix length in CIDR notation
-	static broadcastAddressFromCIDR(addr: string): IPv4 {
+	static broadcastAddressFromCIDR(addr: string): IPv6 {
 		try {
 			const cidr = this.parseCIDR(addr);
 			const ipInterfaceOctets = cidr[0].toByteArray();
@@ -709,7 +650,7 @@ export class IPv6  {
 				i++;
 			}
 
-			return new this(octets);
+			return this.from
 		} catch (e) {
 			throw Error(`ipaddr: the address does not have IPv6 CIDR format (${e})`);
 		}
@@ -722,16 +663,18 @@ export class IPv6  {
 
 	// Checks to see if string is a valid IPv6 Address
 	static isValid(addr: string): boolean {
-
 		// Since IPv6.isValid is always called first, this shortcut
 		// provides a substantial performance gain.
-		if (typeof addr === 'string' && addr.indexOf(':') === -1) {
-			return false;
-		}
+		if (addr.indexOf(':') == -1)
+			return false
 
 		try {
-			const addr = this.parser(addr);
-			new this(addr.parts, addr.zoneId);
+			const parsedAddress = this.parser(addr);
+
+			if (!parsedAddress)
+				return false
+
+			this.fromBytes(...parsedAddress.parts, parsedAddress.zoneId);
 			return true;
 		} catch (e) {
 			return false;
@@ -792,38 +735,35 @@ export class IPv6  {
 	};
 
 	// Parse an IPv6 address.
-	static parser(string: string) {
-		let addr, i, match, octet, octets, zoneId;
+	static parser(string: string): { parts: number[]; zoneId: string | undefined; } | null {
+		let match
 
-		if ((match = string.match(ipv6Regexes.deprecatedTransitional))) {
-			return this.parser(`::ffff:${match[1]}`);
-		}
-		if (ipv6Regexes.native.test(string)) {
-			return expandIPv6(string, 8);
-		}
+		if ((match = string.match(ipv6Regexes.deprecatedTransitional)))
+			return this.parser(`::ffff:${match[1]}`)
+
+		if (ipv6Regexes.native.test(string))
+			return expandIPv6(string, 8)
+
 		if ((match = string.match(ipv6Regexes.transitional))) {
-			zoneId = match[6] || '';
-			addr = expandIPv6(match[1].slice(0, -1) + zoneId, 6);
+			const addr = expandIPv6(match[1]!.slice(0, -1) + (match[6] || ''), 6)!
+
 			if (addr.parts) {
-				octets = [
-					parseInt(match[2]),
-					parseInt(match[3]),
-					parseInt(match[4]),
-					parseInt(match[5])
-				];
-				for (i = 0; i < octets.length; i++) {
-					octet = octets[i];
-					if (!((0 <= octet && octet <= 255))) {
-						return null;
-					}
+				const octets = [
+					parseInt(match[2]!),
+					parseInt(match[3]!),
+					parseInt(match[4]!),
+					parseInt(match[5]!)
+				]
+
+				for (const octet of octets) {
+					if (octet < 0 || octet > 255)
+						return null
 				}
 
-				addr.parts.push(octets[0] << 8 | octets[1]);
-				addr.parts.push(octets[2] << 8 | octets[3]);
-				return {
-					parts: addr.parts,
-					zoneId: addr.zoneId
-				};
+				addr.parts.push((octets[0]! << 8) | octets[1]!)
+				addr.parts.push((octets[2]! << 8) | octets[3]!)
+
+				return { parts: addr.parts, zoneId: addr.zoneId }
 			}
 		}
 
