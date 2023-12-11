@@ -642,15 +642,25 @@ export class IPv6  {
 			const cidr = this.parseCIDR(addr);
 			const ipInterfaceOctets = cidr[0].toByteArray();
 			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray();
-			const octets = [];
-			let i = 0;
-			while (i < 16) {
-				// Broadcast address is bitwise OR between ip interface and inverted mask
-				octets.push(parseInt(ipInterfaceOctets[i], 10) | parseInt(subnetMaskOctets[i], 10) ^ 255);
-				i++;
-			}
 
-			return this.from
+			return this.fromBytes(
+				ipInterfaceOctets[0]! | (subnetMaskOctets[0]! ^ 255),
+				ipInterfaceOctets[1]! | (subnetMaskOctets[1]! ^ 255),
+				ipInterfaceOctets[2]! | (subnetMaskOctets[2]! ^ 255),
+				ipInterfaceOctets[3]! | (subnetMaskOctets[3]! ^ 255),
+				ipInterfaceOctets[4]! | (subnetMaskOctets[4]! ^ 255),
+				ipInterfaceOctets[5]! | (subnetMaskOctets[5]! ^ 255),
+				ipInterfaceOctets[6]! | (subnetMaskOctets[6]! ^ 255),
+				ipInterfaceOctets[7]! | (subnetMaskOctets[7]! ^ 255),
+				ipInterfaceOctets[8]! | (subnetMaskOctets[8]! ^ 255),
+				ipInterfaceOctets[9]! | (subnetMaskOctets[9]! ^ 255),
+				ipInterfaceOctets[10]! | (subnetMaskOctets[10]! ^ 255),
+				ipInterfaceOctets[11]! | (subnetMaskOctets[11]! ^ 255),
+				ipInterfaceOctets[12]! | (subnetMaskOctets[12]! ^ 255),
+				ipInterfaceOctets[13]! | (subnetMaskOctets[13]! ^ 255),
+				ipInterfaceOctets[14]! | (subnetMaskOctets[14]! ^ 255),
+				ipInterfaceOctets[15]! | (subnetMaskOctets[15]! ^ 255),
+			)
 		} catch (e) {
 			throw Error(`ipaddr: the address does not have IPv6 CIDR format (${e})`);
 		}
@@ -683,25 +693,34 @@ export class IPv6  {
 
 	// A utility function to return network address given the IPv6 interface and prefix length in CIDR notation
 	static networkAddressFromCIDR(addr: string): IPv6 {
-		let cidr, i, ipInterfaceOctets, octets, subnetMaskOctets;
-
 		try {
-			cidr = this.parseCIDR(addr);
-			ipInterfaceOctets = cidr[0].toByteArray();
-			subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray();
-			octets = [];
-			i = 0;
-			while (i < 16) {
-				// Network address is bitwise AND between ip interface and mask
-				octets.push(parseInt(ipInterfaceOctets[i], 10) & parseInt(subnetMaskOctets[i], 10));
-				i++;
-			}
+			const cidr = this.parseCIDR(addr)
+			const ipInterfaceOctets = cidr[0].toByteArray()
+			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray()
 
-			return new this(octets);
+			// Network address is bitwise AND between ip interface and mask
+			return this.fromBytes(
+				ipInterfaceOctets[0]! & subnetMaskOctets[0]!,
+				ipInterfaceOctets[1]! & subnetMaskOctets[1]!,
+				ipInterfaceOctets[2]! & subnetMaskOctets[2]!,
+				ipInterfaceOctets[3]! & subnetMaskOctets[3]!,
+				ipInterfaceOctets[4]! & subnetMaskOctets[4]!,
+				ipInterfaceOctets[5]! & subnetMaskOctets[5]!,
+				ipInterfaceOctets[6]! & subnetMaskOctets[6]!,
+				ipInterfaceOctets[7]! & subnetMaskOctets[7]!,
+				ipInterfaceOctets[8]! & subnetMaskOctets[8]!,
+				ipInterfaceOctets[9]! & subnetMaskOctets[9]!,
+				ipInterfaceOctets[10]! & subnetMaskOctets[10]!,
+				ipInterfaceOctets[11]! & subnetMaskOctets[11]!,
+				ipInterfaceOctets[12]! & subnetMaskOctets[12]!,
+				ipInterfaceOctets[13]! & subnetMaskOctets[13]!,
+				ipInterfaceOctets[14]! & subnetMaskOctets[14]!,
+				ipInterfaceOctets[15]! & subnetMaskOctets[15]!
+			)
 		} catch (e) {
-			throw Error(`ipaddr: the address does not have IPv6 CIDR format (${e})`);
+			throw Error(`ipaddr: the address does not have IPv6 CIDR format`, { cause: e });
 		}
-	};
+	}
 
 	// Tries to parse and validate a string with IPv6 address.
 	// Throws an error if it fails.
@@ -715,23 +734,22 @@ export class IPv6  {
 		return new this(addr.parts, addr.zoneId);
 	};
 
-	static parseCIDR(addr: string): [IPv6, number] {
-		let maskLength, match, parsed;
+	static parseCIDR(addr: string): [ IPv6, number ] {
+		const match = addr.match(/^(.+)\/(\d+)$/)
 
-		if ((match = addr.match(/^(.+)\/(\d+)$/))) {
-			maskLength = parseInt(match[2]);
+		if (match) {
+			const maskLength = parseInt(match[2]!)
+
 			if (maskLength >= 0 && maskLength <= 128) {
-				parsed = [this.parse(match[1]), maskLength];
-				Object.defineProperty(parsed, 'toString', {
-					value: function () {
-						return this.join('/');
+				return Object.defineProperty([ this.parse(match[1]!), maskLength ], "toString", {
+					value() {
+						return this.join("/")
 					}
-				});
-				return parsed;
+				})
 			}
 		}
 
-		throw Error('ipaddr: string is not formatted like an IPv6 CIDR range');
+		throw Error("ipaddr: string is not formatted like an IPv6 CIDR range")
 	};
 
 	// Parse an IPv6 address.
@@ -772,38 +790,39 @@ export class IPv6  {
 
 	// A utility function to return subnet mask in IPv6 format given the prefix length
 	static subnetMaskFromPrefixLength(prefix: number): IPv6 {
-		if (prefix < 0 || prefix > 128) {
-			throw Error('ipaddr: invalid IPv6 prefix length');
-		}
+		if (prefix < 0 || prefix > 128)
+			throw Error("ipaddr: invalid IPv6 prefix length")
+
+		const subnetMask = this.fromHextets(0, 0, 0, 0, 0, 0, 0, 0)
+		const u8View = new Uint8Array(subnetMask.hextets.buffer)
+
+		u8View
 
 		const octets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 		let j = 0;
 		const filledOctetCount = Math.floor(prefix / 8);
 
 		while (j < filledOctetCount) {
-			octets[j] = 255;
-			j++;
+			octets[j] = 255
+			j++
 		}
 
-		if (filledOctetCount < 16) {
-			octets[filledOctetCount] = Math.pow(2, prefix % 8) - 1 << 8 - (prefix % 8);
-		}
+		if (filledOctetCount < 16)
+			octets[filledOctetCount] = Math.pow(2, prefix % 8) - 1 << 8 - (prefix % 8)
 
-		return new this(octets);
+		return new this(octets)
 	};
 }
 
 // Try to parse an array in network order (MSB first) for IPv4 and IPv6
 export function fromByteArray(bytes: number[]): IPv4 | IPv6 {
-	const length = bytes.length;
+	if (bytes.length === 4)
+		return new IPv4(bytes)
 
-	if (length === 4) {
-		return new IPv4(bytes);
-	} else if (length === 16) {
-		return new IPv6(bytes);
-	} else {
-		throw Error('ipaddr: the binary input is neither an IPv6 nor IPv4 address');
-	}
+	if (bytes.length === 16)
+		return new IPv6(bytes)
+
+	throw Error("ipaddr: the binary input is neither an IPv6 nor IPv4 address")
 }
 
 // Checks if the address is valid IP address
