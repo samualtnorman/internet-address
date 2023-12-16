@@ -1,32 +1,34 @@
 {
-  "name": "ipaddr.js",
-  "description": "A library for manipulating IPv4 and IPv6 addresses in JavaScript.",
-  "version": "2.1.0",
-  "author": "whitequark <whitequark@whitequark.org>",
-  "contributors": [
-    "Samual Norman <me@samual.uk> (https://samual.uk/)"
-  ],
-  "devDependencies": {
-    "rollup": "^4.6.1",
-    "vitest": "^1.0.1"
-  },
-  "scripts": {
-    "build": "rollup --config",
-    "test": "vitest"
-  },
-  "files": [
-    "LICENSE"
-  ],
-  "keywords": [
-    "ip",
-    "ipv4",
-    "ipv6"
-  ],
-  "main": "dist/index.js",
-  "engines": {
-    "node": ">=20.9.0"
-  },
-  "license": "MIT",
-  "types": "./lib/ipaddr.js.d.ts",
-  "type": "module"
+	"keywords": [
+		"ip",
+		"ipv4",
+		"ipv6"
+	],
+	"homepage": "https://github.com/samualtnorman/ipaddr.js#readme",
+	"bugs": {
+		"url": "https://github.com/samualtnorman/ipaddr.js/issues",
+		"email": "me@samual.uk"
+	},
+	"license": "MIT",
+	"author": "whitequark <whitequark@whitequark.org>",
+	"contributors": [
+		"Samual Norman <me@samual.uk> (https://samual.uk/)"
+	],
+	"repository": "github:samualtnorman/ipaddr.js",
+	"scripts": {
+		"build": "rollup --config",
+		"test": "vitest"
+	},
+	"devDependencies": {
+		"@babel/preset-env": "^7.23.6",
+		"@babel/preset-typescript": "^7.23.3",
+		"@rollup/plugin-babel": "^6.0.4",
+		"rollup": "^4.6.1",
+		"vitest": "^1.0.1"
+	},
+	"engines": {
+		"node": ">=20.9.0"
+	},
+	"private": true,
+	"type": "module"
 }

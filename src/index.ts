@@ -129,12 +129,12 @@ function padPart (part: string, length: number) {
 }
 
 export class IPv4 {
-	// Constructs a new IPv4 address from an array of four octets
-	// in network order (MSB first)
-	// Verifies the input.
+	/** Constructs a new IPv4 address from an array of four octets
+	  * in network order (MSB first)
+	  * Verifies the input. */
 	constructor(/** 4 bytes */ public octets: Uint8Array) {
 		if (octets.length !== 4)
-			throw Error("ipaddr: ipv4 octet count should be 4")
+			throw Error("IPv4 octets should have a length of 4")
 	}
 
 	static fromBytes(byte0: number, byte1: number, byte2: number, byte3: number): IPv4 {
@@ -258,19 +258,25 @@ export class IPv4 {
 	}
 
 	// Checks if a given string is formatted like IPv4 address.
-	static isIPv4(addr: string): boolean {
-		return this.parser(addr) !== null;
+	static isIPv4(address: string): boolean {
+		return Boolean(this.parser(address))
 	}
 
 	// Checks if a given string is a valid IPv4 address.
 	static isValid(addr: string): boolean {
 		try {
-			const parsed = this.parser(addr)
+			const parts = this.parser(addr)
 
-			if (!parsed)
+			if (!parts)
 				return false
 
-			this.fromBytes(...parsed)
+			for (const part of parts) {
+				if (part < 0 || part > 0xFF)
+					return false
+			}
+
+			// TODO I'm pretty sure this can't throw making try catch unnecessary
+			this.fromBytes(...parts)
 
 			return true
 		} catch (e) {
@@ -304,13 +310,12 @@ export class IPv4 {
 	/** Tries to parse and validate a string with IPv4 address.
 	  * Throws an error if it fails. */
 	static parse(addr: string): IPv4 {
-		const parts = this.parser(addr);
+		const parts = this.parser(addr)
 
-		if (parts === null) {
-			throw Error("ipaddr: string is not formatted like an IPv4 Address");
-		}
+		if (!parts)
+			throw Error("String is not formatted like an IPv4 Address")
 
-		return this.fromBytes(...parts);
+		return this.fromBytes(...parts)
 	};
 
 	/** Parses the string as an IPv4 Address with CIDR Notation. */
@@ -332,9 +337,9 @@ export class IPv4 {
 		throw Error("ipaddr: string is not formatted like an IPv4 CIDR range")
 	}
 
-	// Classful variants (like a.b, where a is an octet, and b is a 24-bit
-	// value representing last three octets; this corresponds to a class C
-	// address) are omitted due to classless nature of modern Internet.
+	/** Classful variants (like a.b, where a is an octet, and b is a 24-bit
+	  * value representing last three octets; this corresponds to a class C
+	  * address) are omitted due to classless nature of modern Internet. */
 	static parser(string: string): [ number, number, number, number ] | null {
 		let match
 
@@ -351,15 +356,10 @@ export class IPv4 {
 		if ((match = string.match(ipv4Regexes.longValue))) {
 			const value = parseIntAuto(match[1]!);
 
-			if (value > 0xffffffff || value < 0)
-				throw Error('ipaddr: address outside defined range')
+			if (value > 0xFF_FF_FF_FF || value < 0)
+				throw Error("Address part outside defined range")
 
-			return [
-				(value >> 24) & 0xff,
-				(value >> 16) & 0xff,
-				(value >> 8) & 0xff,
-				value & 0xff
-			]
+			return [ (value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF ]
 		}
 
 		if ((match = string.match(ipv4Regexes.twoOctet))) {
@@ -367,7 +367,7 @@ export class IPv4 {
 			const lastOctets = parseIntAuto(match[2]!);
 
 			if (firstOctet > 0xff || firstOctet < 0 || lastOctets > 0xffffff || lastOctets < 0)
-				throw Error('ipaddr: address outside defined range')
+				throw Error("Address part outside defined range")
 
 			return [ firstOctet, (lastOctets >> 16) & 0xff, (lastOctets >>  8) & 0xff, lastOctets & 0xff ]
 		}
@@ -381,7 +381,7 @@ export class IPv4 {
 				firstOctet > 0xff || firstOctet < 0 || secondOctet > 0xff ||
 				secondOctet < 0 || lastOctets > 0xffff || lastOctets < 0
 			)
-				throw Error('ipaddr: address outside defined range')
+				throw Error("Address part outside defined range")
 
 			return [ firstOctet, secondOctet, (lastOctets >> 8) & 0xff, lastOctets & 0xff ]
 		}
@@ -433,10 +433,13 @@ export class IPv6  {
 	// 		throw Error('ipaddr: ipv6 part count should be 8 or 16')
 	// }
 
-	private constructor(
+	constructor(
 		/** 8 big-endian 16-bit unsigned integers */ public hextets: Uint16Array,
 		public zoneId?: string
-	) {}
+	) {
+		if (hextets.length != 8)
+			throw Error("hextets Uint16Array must have a length of 8")
+	}
 
 	static fromBytes(
 		byte0: number, byte1: number, byte2: number, byte3: number, byte4: number, byte5: number, byte6: number,
@@ -679,12 +682,13 @@ export class IPv6  {
 			return false
 
 		try {
-			const parsedAddress = this.parser(addr);
+			const parsedAddress = this.parser(addr)
 
 			if (!parsedAddress)
 				return false
 
-			this.fromBytes(...parsedAddress.parts, parsedAddress.zoneId);
+			new this(new Uint16Array(parsedAddress.parts), parsedAddress.zoneId)
+
 			return true;
 		} catch (e) {
 			return false;
@@ -722,17 +726,16 @@ export class IPv6  {
 		}
 	}
 
-	// Tries to parse and validate a string with IPv6 address.
-	// Throws an error if it fails.
+	/** Tries to parse and validate a string with IPv6 address.
+	  * Throws an error if it fails. */
 	static parse(addr: string): IPv6 {
-		const addr = this.parser(addr);
+		const parsedAddress = this.parser(addr)
 
-		if (addr.parts === null) {
-			throw Error('ipaddr: string is not formatted like an IPv6 Address');
-		}
+		if (parsedAddress === null)
+			throw Error("ipaddr: string is not formatted like an IPv6 Address")
 
-		return new this(addr.parts, addr.zoneId);
-	};
+		return new this(new Uint16Array(parsedAddress.parts), parsedAddress.zoneId)
+	}
 
 	static parseCIDR(addr: string): [ IPv6, number ] {
 		const match = addr.match(/^(.+)\/(\d+)$/)
@@ -752,7 +755,7 @@ export class IPv6  {
 		throw Error("ipaddr: string is not formatted like an IPv6 CIDR range")
 	};
 
-	// Parse an IPv6 address.
+	/** Parse an IPv6 address. */
 	static parser(string: string): { parts: number[]; zoneId: string | undefined; } | null {
 		let match
 
@@ -785,42 +788,34 @@ export class IPv6  {
 			}
 		}
 
-		return null;
-	};
+		return null
+	}
 
-	// A utility function to return subnet mask in IPv6 format given the prefix length
+	/** A utility function to return subnet mask in IPv6 format given the prefix length */
 	static subnetMaskFromPrefixLength(prefix: number): IPv6 {
 		if (prefix < 0 || prefix > 128)
 			throw Error("ipaddr: invalid IPv6 prefix length")
 
 		const subnetMask = this.fromHextets(0, 0, 0, 0, 0, 0, 0, 0)
-		const u8View = new Uint8Array(subnetMask.hextets.buffer)
+		const filledHextetCount = Math.floor(prefix / 16)
 
-		u8View
+		for (let i = 0; i < filledHextetCount; i++)
+			subnetMask.hextets[i] = 0xFF_FF
 
-		const octets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-		let j = 0;
-		const filledOctetCount = Math.floor(prefix / 8);
+		if (filledHextetCount < 32)
+			subnetMask.hextets[filledHextetCount] = ((2 ** (prefix % 16)) - 1) << (16 - (prefix % 16))
 
-		while (j < filledOctetCount) {
-			octets[j] = 255
-			j++
-		}
-
-		if (filledOctetCount < 16)
-			octets[filledOctetCount] = Math.pow(2, prefix % 8) - 1 << 8 - (prefix % 8)
-
-		return new this(octets)
-	};
+		return subnetMask
+	}
 }
 
 // Try to parse an array in network order (MSB first) for IPv4 and IPv6
 export function fromByteArray(bytes: number[]): IPv4 | IPv6 {
 	if (bytes.length === 4)
-		return new IPv4(bytes)
+		return IPv4.fromBytes(...bytes as [ number, number, number, number ])
 
 	if (bytes.length === 16)
-		return new IPv6(bytes)
+		return IPv6.fromBytes(...bytes as [ number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number ])
 
 	throw Error("ipaddr: the binary input is neither an IPv6 nor IPv4 address")
 }
@@ -872,13 +867,21 @@ export function process(addr: string): IPv4 | IPv6 {
 // rangeList can contain both IPv4 and IPv6 subnet entries and will not throw errors
 // on matching IPv4 addresses to IPv6 ranges or vice versa.
 export function subnetMatch<T extends IPv4 | IPv6>(addr: T, rangeList: RangeList<T>, defaultName: T extends IPv4 ? IPv4Range : IPv6Range = 'unicast'): T extends IPv4 ? IPv4Range : IPv6Range {
-	for (const [ rangeName, rangeSubnets ] of rangeList) {
-		for (const subnet of rangeSubnets) {
-			if (addr.constructor === subnet.ip.constructor && addr.match(subnet.ip, subnet.bits)) {
-				return rangeName;
+	if (addr instanceof IPv4) {
+		for (const [ rangeName, rangeSubnets ] of rangeList) {
+			for (const subnet of rangeSubnets) {
+				if (subnet.ip instanceof IPv4 && addr.match(subnet.ip, subnet.bits))
+					return rangeName
+			}
+		}
+	} else {
+		for (const [ rangeName, rangeSubnets ] of rangeList) {
+			for (const subnet of rangeSubnets) {
+				if (subnet.ip instanceof IPv6 && addr.match(subnet.ip, subnet.bits))
+					return rangeName
 			}
 		}
 	}
 
-	return defaultName;
+	return defaultName
 }
