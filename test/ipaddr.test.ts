@@ -1,16 +1,14 @@
 import { describe, expect, test } from "vitest"
-import { IPv4 } from "../src"
+import { IPv4, IPv6, parse, parseCIDR, process } from "../src"
 
-describe("new IPv4", () => {
-	test("works", () => {
-		const u8View = new Uint8Array([ 167, 162, 196, 35 ])
+describe("new IPv4()", () => {
+	const u8View = new Uint8Array([ 167, 162, 196, 35 ])
 
-		expect(new IPv4(u8View).octets).toBe(u8View)
-	})
+	expect(new IPv4(u8View).octets).toBe(u8View)
 
-	test("reject invalid Uint8Array", () => {
+	test("reject invalid Uint8Array", () =>
 		expect(() => new IPv4(new Uint8Array([ 73, 81, 19, 189, 70 ]))).toThrow(Error)
-	})
+	)
 })
 
 test("IPv4.fromBytes()", () =>
@@ -34,13 +32,13 @@ test("IPv4.parseCIDR().toString()", () =>
 )
 
 describe("IPv4.isIPv4()", () => {
-	test("works", () => expect(IPv4.isIPv4("242.41.0247.0x23")).toBe(true))
+	expect(IPv4.isIPv4("242.41.0247.0x23")).toBe(true)
 	test("accept invalid IPv4", () => expect(IPv4.isIPv4("256.229.119.175")).toBe(true))
 	test("detect non-IPv4 string", () => expect(IPv4.isIPv4("202.0x5A.foo.234")).toBe(false))
 })
 
 describe("IPv4.isValid()", () => {
-	test("works", () => expect(IPv4.isValid("120.206.0370.0xCA")).toBe(true))
+	expect(IPv4.isValid("120.206.0370.0xCA")).toBe(true)
 	test("detect invalid IPv4", () => expect(IPv4.isValid("256.163.10.46")).toBe(false))
 	test("detect non-IPv4 string", () => expect(IPv4.isValid("113.0x34.foo.117")).toBe(false))
 })
@@ -67,355 +65,304 @@ describe("IPv4.parse()", () => {
 	})
 })
 
-// it('matches IPv4 CIDR correctly', () => {
-// 	let addr = new ipaddr.IPv4([10, 5, 0, 1]);
-// 	assert.equal(addr.match(ipaddr.IPv4.parse('0.0.0.0'), 0), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parse('11.0.0.0'), 8), false);
-// 	assert.equal(addr.match(ipaddr.IPv4.parse('10.0.0.0'), 8), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parse('10.0.0.1'), 8), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parse('10.0.0.10'), 8), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parse('10.5.5.0'), 16), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parse('10.4.5.0'), 16), false);
-// 	assert.equal(addr.match(ipaddr.IPv4.parse('10.4.5.0'), 15), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parse('10.5.0.2'), 32), false);
-// 	assert.equal(addr.match(addr, 32), true);
-// })
+IPv4.fromBytes(10, 5, 0, 1).match
 
-// it('parses CIDR reversible', () => {
-// 	assert.equal(ipaddr.parseCIDR('1.2.3.4/24').toString(), '1.2.3.4/24');
-// 	assert.equal(ipaddr.parseCIDR('::1%zone/24').toString(), '::1%zone/24');
-// })
+test("IPv4.prototype.match()", () => {
+	const address = IPv4.fromBytes(10, 5, 0, 1)
 
-// it('parses IPv4 CIDR correctly', () => {
-// 	let addr = new ipaddr.IPv4([10, 5, 0, 1]);
-// 	assert.equal(addr.match(ipaddr.IPv4.parseCIDR('0.0.0.0/0')), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parseCIDR('11.0.0.0/8')), false);
-// 	assert.equal(addr.match(ipaddr.IPv4.parseCIDR('10.0.0.0/8')), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parseCIDR('10.0.0.1/8')), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parseCIDR('10.0.0.10/8')), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parseCIDR('10.5.5.0/16')), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parseCIDR('10.4.5.0/16')), false);
-// 	assert.equal(addr.match(ipaddr.IPv4.parseCIDR('10.4.5.0/15')), true);
-// 	assert.equal(addr.match(ipaddr.IPv4.parseCIDR('10.5.0.2/32')), false);
-// 	assert.equal(addr.match(ipaddr.IPv4.parseCIDR('10.5.0.1/32')), true);
-// 	assert.throws(() => {
-// 		ipaddr.IPv4.parseCIDR('10.5.0.1');
-// 	});
-// 	assert.throws(() => {
-// 		ipaddr.IPv4.parseCIDR('0.0.0.0/-1');
-// 	});
-// 	assert.throws(() => {
-// 		ipaddr.IPv4.parseCIDR('0.0.0.0/33');
-// 	});
-// })
+	expect(address.match(IPv4.fromBytes(0, 0, 0, 0), 0)).toBe(true)
+	expect(address.match(IPv4.fromBytes(11, 0, 0, 0), 8)).toBe(false)
+	expect(address.match(IPv4.fromBytes(10, 0, 0, 0), 8)).toBe(true)
+	expect(address.match(IPv4.fromBytes(10, 0, 0, 1), 8)).toBe(true)
+	expect(address.match(IPv4.fromBytes(10, 0, 0, 10), 8)).toBe(true)
+	expect(address.match(IPv4.fromBytes(10, 5, 5, 0), 16)).toBe(true)
+	expect(address.match(IPv4.fromBytes(10, 4, 5, 0), 16)).toBe(false)
+	expect(address.match(IPv4.fromBytes(10, 4, 5, 0), 15)).toBe(true)
+	expect(address.match(IPv4.fromBytes(10, 5, 0, 2), 32)).toBe(false)
+	expect(address.match(address, 32)).toBe(true)
+})
 
-// it('detects reserved IPv4 networks', () => {
-// 	assert.equal(ipaddr.IPv4.parse('0.0.0.0').range(), 'unspecified');
-// 	assert.equal(ipaddr.IPv4.parse('0.1.0.0').range(), 'unspecified');
-// 	assert.equal(ipaddr.IPv4.parse('10.1.0.1').range(), 'private');
-// 	assert.equal(ipaddr.IPv4.parse('100.64.0.0').range(), 'carrierGradeNat');
-// 	assert.equal(ipaddr.IPv4.parse('100.127.255.255').range(), 'carrierGradeNat');
-// 	assert.equal(ipaddr.IPv4.parse('192.168.2.1').range(), 'private');
-// 	assert.equal(ipaddr.IPv4.parse('224.100.0.1').range(), 'multicast');
-// 	assert.equal(ipaddr.IPv4.parse('169.254.15.0').range(), 'linkLocal');
-// 	assert.equal(ipaddr.IPv4.parse('127.1.1.1').range(), 'loopback');
-// 	assert.equal(ipaddr.IPv4.parse('255.255.255.255').range(), 'broadcast');
-// 	assert.equal(ipaddr.IPv4.parse('240.1.2.3').range(), 'reserved');
-// 	assert.equal(ipaddr.IPv4.parse('8.8.8.8').range(), 'unicast');
-// })
+test("parseCIDR()", () => {
+	expect(parseCIDR("1.2.3.4/24").toString()).toBe("1.2.3.4/24")
+	expect(parseCIDR("::1%zone/24").toString()).toBe("::1%zone/24")
+})
 
-// it('checks the conventional IPv4 address format', () => {
-// 	assert.equal(ipaddr.IPv4.isValidFourPartDecimal('0.0.0.0'), true);
-// 	assert.equal(ipaddr.IPv4.isValidFourPartDecimal('127.0.0.1'), true);
-// 	assert.equal(ipaddr.IPv4.isValidFourPartDecimal('192.168.1.1'), true);
-// 	assert.equal(ipaddr.IPv4.isValidFourPartDecimal('0xc0.168.1.1'), false);
-// })
+test("IPv4.parseCIDR()", () => {
+	const address = IPv4.fromBytes(10, 5, 0, 1)
 
-// it('refuses to construct IPv4 address with trailing and leading zeros', () => {
-// 	assert.equal(ipaddr.IPv4.isValidFourPartDecimal('000000192.168.100.2'), false);
-// 	assert.equal(ipaddr.IPv4.isValidFourPartDecimal('192.0000168.100.2'), false);
-// 	assert.equal(ipaddr.IPv4.isValidFourPartDecimal('192.168.100.00000002'), false);
-// 	assert.equal(ipaddr.IPv4.isValidFourPartDecimal('192.168.100.20000000'), false);
-// })
+	expect(address.match(...IPv4.parseCIDR("0.0.0.0/0"))).toBe(true)
+	expect(address.match(...IPv4.parseCIDR("11.0.0.0/8"))).toBe(false)
+	expect(address.match(...IPv4.parseCIDR("10.0.0.0/8"))).toBe(true)
+	expect(address.match(...IPv4.parseCIDR("10.0.0.1/8"))).toBe(true)
+	expect(address.match(...IPv4.parseCIDR("10.0.0.10/8"))).toBe(true)
+	expect(address.match(...IPv4.parseCIDR("10.0.0.10/8"))).toBe(true)
+	expect(address.match(...IPv4.parseCIDR("10.5.5.0/16"))).toBe(true)
+	expect(address.match(...IPv4.parseCIDR("10.4.5.0/16"))).toBe(false)
+	expect(address.match(...IPv4.parseCIDR("10.4.5.0/15"))).toBe(true)
+	expect(address.match(...IPv4.parseCIDR("10.5.0.2/32"))).toBe(false)
+	expect(address.match(...IPv4.parseCIDR("10.5.0.1/32"))).toBe(true)
+	expect(() => IPv4.parseCIDR("10.5.0.1")).toThrow(Error)
+	expect(() => IPv4.parseCIDR("0.0.0.0/-1")).toThrow(Error)
+	expect(() => IPv4.parseCIDR("0.0.0.0/33")).toThrow(Error)
+})
 
-// it('can construct IPv6 from 16bit parts', () => {
-// 	assert.doesNotThrow(() => {
-// 		new ipaddr.IPv6([0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1]);
-// 	});
-// })
+test("IPv4.prototype.range()", () => {
+	expect(IPv4.fromBytes(0, 0, 0, 0).range()).toBe("unspecified")
+	expect(IPv4.fromBytes(0, 1, 0, 0).range()).toBe("unspecified")
+	expect(IPv4.fromBytes(10, 1, 0, 1).range()).toBe("private")
+	expect(IPv4.fromBytes(100, 64, 0, 0).range()).toBe("carrierGradeNat")
+	expect(IPv4.fromBytes(100, 127, 255, 255).range()).toBe("carrierGradeNat")
+	expect(IPv4.fromBytes(192, 168, 2, 1).range()).toBe("private")
+	expect(IPv4.fromBytes(224, 100, 0, 1).range()).toBe("multicast")
+	expect(IPv4.fromBytes(169, 254, 15, 0).range()).toBe("linkLocal")
+	expect(IPv4.fromBytes(127, 1, 1, 1).range()).toBe("loopback")
+	expect(IPv4.fromBytes(255, 255, 255, 255).range()).toBe("broadcast")
+	expect(IPv4.fromBytes(240, 1, 2, 3).range()).toBe("reserved")
+	expect(IPv4.fromBytes(8, 8, 8, 8).range()).toBe("unicast")
+})
 
-// it('can construct IPv6 from 8bit parts', () => {
-// 	assert.doesNotThrow(() => {
-// 		new ipaddr.IPv6([0x20, 0x01, 0xd, 0xb8, 0xf5, 0x3a, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
-// 	});
-// 	assert.deepEqual(
-// 		new ipaddr.IPv6([0x20, 0x01, 0xd, 0xb8, 0xf5, 0x3a, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
-// 		new ipaddr.IPv6([0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1])
-// 	);
-// })
+describe("IPv4.isValidFourPartDecimal()", () => {
+	expect(IPv4.isValidFourPartDecimal("0.0.0.0")).toBe(true)
+	expect(IPv4.isValidFourPartDecimal("127.0.0.1")).toBe(true)
+	expect(IPv4.isValidFourPartDecimal("192.168.1.1")).toBe(true)
+	expect(IPv4.isValidFourPartDecimal("0xC0.168.1.1")).toBe(false)
 
-// it('refuses to construct invalid IPv6', () => {
-// 	assert.throws(() => {
-// 		new ipaddr.IPv6([0xfffff, 0, 0, 0, 0, 0, 0, 1]);
-// 	});
-// 	assert.throws(() => {
-// 		new ipaddr.IPv6([0xfffff, 0, 0, 0, 0, 0, 1]);
-// 	});
-// 	assert.throws(() => {
-// 		new ipaddr.IPv6([0xffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
-// 	});
-// })
+	test("leading zeroes", () => {
+		expect(IPv4.isValidFourPartDecimal("000000192.168.100.2")).toBe(false)
+		expect(IPv4.isValidFourPartDecimal("192.0000168.100.2")).toBe(false)
+	})
 
-// it('converts IPv6 to string correctly', () => {
-// 	let addr = new ipaddr.IPv6([0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1]);
-// 	assert.equal(addr.toNormalizedString(), '2001:db8:f53a:0:0:0:0:1');
-// 	assert.equal(addr.toFixedLengthString(), '2001:0db8:f53a:0000:0000:0000:0000:0001');
-// 	assert.equal(addr.toString(), '2001:db8:f53a::1');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0, 0, 0, 0, 0, 0]).toString(), '::');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0, 0, 0, 0, 0, 1]).toString(), '::1');
-// 	assert.equal(new ipaddr.IPv6([0x2001, 0xdb8, 0, 0, 0, 0, 0, 0]).toString(), '2001:db8::');
-// 	assert.equal(new ipaddr.IPv6([0, 0xff, 0, 0, 0, 0, 0, 0]).toString(), '0:ff::');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0, 0, 0, 0, 0xff, 0]).toString(), '::ff:0');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0xff, 0, 0, 0, 0, 0]).toString(), '0:0:ff::');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0, 0, 0, 0xff, 0, 0]).toString(), '::ff:0:0');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0, 0xff, 0xff, 0, 0, 0]).toString(), '::ff:ff:0:0:0');
-// 	assert.equal(new ipaddr.IPv6([0x2001, 0xdb8, 0xff, 0xabc, 0xdef, 0x123b, 0x456c, 0x78d]).toString(), '2001:db8:ff:abc:def:123b:456c:78d');
-// 	assert.equal(new ipaddr.IPv6([0x2001, 0xdb8, 0xff, 0xabc, 0, 0x123b, 0x456c, 0x78d]).toString(), '2001:db8:ff:abc:0:123b:456c:78d');
-// 	assert.equal(new ipaddr.IPv6([0x2001, 0xdb8, 0xff, 0xabc, 0, 0, 0x456c, 0x78d]).toString(), '2001:db8:ff:abc::456c:78d');
-// })
+	test("trailing zeroes", () => {
+		expect(IPv4.isValidFourPartDecimal("192.168.100.00000002")).toBe(false)
+		expect(IPv4.isValidFourPartDecimal("192.168.100.20000000")).toBe(false)
+	})
+})
 
-// it('converts IPv6 CIDR to string correctly', () => {
-// 	assert.equal(IPv6.parseCIDR('0:0:0:0:0:0:0:0/64').toString(), '::/64');
-// 	assert.equal(IPv6.parseCIDR('0:0:0:ff:ff:0:0:0/64').toString(), '::ff:ff:0:0:0/64');
-// 	assert.equal(IPv6.parseCIDR('2001:db8:ff:abc:def:123b:456c:78d/64').toString(), '2001:db8:ff:abc:def:123b:456c:78d/64');
-// })
+describe("new IPv6()", () => {
+	const u16View = new Uint16Array([ 0x2001, 0xDB8, 0xF53A, 0, 0, 0, 0, 1 ])
 
-// it('converts IPv6 to RFC 5952 string correctly', () => {
-// 	// see https://tools.ietf.org/html/rfc5952#section-4
-// 	let addr = new ipaddr.IPv6([0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1]);
-// 	assert.equal(addr.toRFC5952String(), '2001:db8:f53a::1');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0, 0, 0, 0, 0, 0]).toRFC5952String(), '::');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0, 0, 0, 0, 0, 1]).toRFC5952String(), '::1');
-// 	assert.equal(new ipaddr.IPv6([0x2001, 0xdb8, 0, 0, 0, 0, 0, 0]).toRFC5952String(), '2001:db8::');
-// 	// longest set of zeroes gets collapsed (section 4.2.3)
-// 	assert.equal(new ipaddr.IPv6([0, 0xff, 0, 0, 0, 0, 0, 0]).toRFC5952String(), '0:ff::');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0, 0, 0, 0, 0xff, 0]).toRFC5952String(), '::ff:0');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0xff, 0, 0, 0, 0, 0]).toRFC5952String(), '0:0:ff::');
-// 	assert.equal(new ipaddr.IPv6([0, 0, 0, 0, 0, 0xff, 0, 0]).toRFC5952String(), '::ff:0:0');
+	expect(new IPv6(u16View).hextets).toBe(u16View)
 
-// 	assert.equal(new ipaddr.IPv6([0x2001, 0, 0, 0, 0xff, 0, 0, 0]).toRFC5952String(), '2001::ff:0:0:0');
-// 	assert.equal(new ipaddr.IPv6([0x2001, 0xdb8, 0xff, 0xabc, 0xdef, 0x123b, 0x456c, 0x78d]).toRFC5952String(), '2001:db8:ff:abc:def:123b:456c:78d');
+	test("reject invalid Uint16Array", () =>
+		expect(() => new IPv6(new Uint16Array([ 51949, 17327, 14492, 12043, 34687, 33000, 19107 ]))).toThrow(Error)
+	)
+})
 
-// 	// don't shorten single 0s (section 4.2.2)
-// 	assert.equal(new ipaddr.IPv6([0x2001, 0xdb8, 0xff, 0xabc, 0, 0x123b, 0x456c, 0x78d]).toRFC5952String(), '2001:db8:ff:abc:0:123b:456c:78d');
-// 	assert.equal(new ipaddr.IPv6([0x2001, 0xdb8, 0xff, 0xabc, 0x78d, 0x123b, 0x456c, 0]).toRFC5952String(), '2001:db8:ff:abc:78d:123b:456c:0');
-// 	assert.equal(new ipaddr.IPv6([0, 0xdb8, 0xff, 0xabc, 0x78d, 0x123b, 0x456c, 0x2001]).toRFC5952String(), '0:db8:ff:abc:78d:123b:456c:2001');
+test("IPv6.fromBytes()", () =>
+	expect(IPv6.fromBytes(58, 19, 11, 144, 148, 239, 218, 206, 117, 61, 108, 90, 134, 0, 148, 47).hextets)
+		.toEqual(new Uint16Array([ 14867, 2960, 38127, 56014, 30013, 27738, 34304, 37935 ]))
+)
 
-// 	assert.equal(new ipaddr.IPv6([0x2001, 0xdb8, 0xff, 0xabc, 0, 0, 0x456c, 0x78d]).toRFC5952String(), '2001:db8:ff:abc::456c:78d');
-// })
+test("IPv6.fromHextets()", () =>
+	expect(IPv6.fromHextets(42760, 21232, 25849, 30266, 13260, 63680, 46381, 38566).hextets)
+		.toEqual(new Uint16Array([ 42760, 21232, 25849, 30266, 13260, 63680, 46381, 38566 ]))
+)
 
-// it('returns IPv6 zoneIndex', () => {
-// 	let addr = new ipaddr.IPv6([0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1], 'utun0');
-// 	assert.equal(addr.toNormalizedString(), '2001:db8:f53a:0:0:0:0:1%utun0');
-// 	assert.equal(addr.toString(), '2001:db8:f53a::1%utun0');
+test("IPv6.prototype.toNormalizedString()", () => {
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1).toNormalizedString()).toBe("2001:db8:f53a:0:0:0:0:1")
 
-// 	assert.equal(
-// 		ipaddr.parse('2001:db8:f53a::1%2').toString(),
-// 		'2001:db8:f53a::1%2'
-// 	);
-// 	assert.equal(
-// 		ipaddr.parse('2001:db8:f53a::1%WAT').toString(),
-// 		'2001:db8:f53a::1%WAT'
-// 	);
-// 	assert.equal(
-// 		ipaddr.parse('2001:db8:f53a::1%sUp').toString(),
-// 		'2001:db8:f53a::1%sUp'
-// 	);
-// })
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1, "utun0").toNormalizedString())
+		.toBe("2001:db8:f53a:0:0:0:0:1%utun0")
 
-// it('returns IPv6 zoneIndex for IPv4-mapped IPv6 addresses', () => {
-// 	let addr = ipaddr.parse('::ffff:192.168.1.1%eth0');
-// 	assert.equal(addr.toNormalizedString(), '0:0:0:0:0:ffff:c0a8:101%eth0');
-// 	assert.equal(addr.toString(), '::ffff:c0a8:101%eth0');
+	expect(parse("::ffff:192.168.1.1%eth0").toNormalizedString()).toBe("0:0:0:0:0:ffff:c0a8:101%eth0")
+})
 
-// 	assert.equal(
-// 		ipaddr.parse('::ffff:192.168.1.1%2').toString(),
-// 		'::ffff:c0a8:101%2'
-// 	);
-// 	assert.equal(
-// 		ipaddr.parse('::ffff:192.168.1.1%WAT').toString(),
-// 		'::ffff:c0a8:101%WAT'
-// 	);
-// 	assert.equal(
-// 		ipaddr.parse('::ffff:192.168.1.1%sUp').toString(),
-// 		'::ffff:c0a8:101%sUp'
-// 	);
-// })
+test("IPv6.prototype.toFixedLengthString()", () =>
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1).toFixedLengthString())
+		.toBe("2001:0db8:f53a:0000:0000:0000:0000:0001")
+)
 
-// it('returns correct kind for IPv6', () => {
-// 	let addr = new ipaddr.IPv6([0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1]);
-// 	assert.equal(addr.kind(), 'ipv6');
-// })
+test("IPv6.prototype.toString()", () => {
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1).toString()).toBe("2001:db8:f53a::1")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0, 0).toString()).toBe("::")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0, 1).toString()).toBe("::1")
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0).toString()).toBe("2001:db8::")
+	expect(IPv6.fromHextets(0, 0xff, 0, 0, 0, 0, 0, 0).toString()).toBe("0:ff::")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0xff, 0).toString()).toBe("::ff:0")
+	expect(IPv6.fromHextets(0, 0, 0xff, 0, 0, 0, 0, 0).toString()).toBe("0:0:ff::")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0xff, 0, 0).toString()).toBe("::ff:0:0")
+	expect(IPv6.fromHextets(0, 0, 0, 0xff, 0xff, 0, 0, 0).toString()).toBe("::ff:ff:0:0:0")
 
-// it('allows to access IPv6 address parts', () => {
-// 	let addr = new ipaddr.IPv6([0x2001, 0xdb8, 0xf53a, 0, 0, 42, 0, 1]);
-// 	assert.equal(addr.parts[5], 42);
-// })
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0xdef, 0x123b, 0x456c, 0x78d).toString())
+		.toBe("2001:db8:ff:abc:def:123b:456c:78d")
 
-// it('checks IPv6 address format', () => {
-// 	assert.equal(ipaddr.IPv6.isIPv6('2001:db8:F53A::1'), true);
-// 	assert.equal(ipaddr.IPv6.isIPv6('200001::1'), true);
-// 	assert.equal(ipaddr.IPv6.isIPv6('::ffff:192.168.1.1'), true);
-// 	assert.equal(ipaddr.IPv6.isIPv6('::ffff:192.168.1.1%z'), true);
-// 	assert.equal(ipaddr.IPv6.isIPv6('::10.2.3.4'), true);
-// 	assert.equal(ipaddr.IPv6.isIPv6('::12.34.56.78%z'), true);
-// 	assert.equal(ipaddr.IPv6.isIPv6('::ffff:300.168.1.1'), false);
-// 	assert.equal(ipaddr.IPv6.isIPv6('::ffff:300.168.1.1:0'), false);
-// 	assert.equal(ipaddr.IPv6.isIPv6('fe80::wtf'), false);
-// 	assert.equal(ipaddr.IPv6.isIPv6('fe80::%'), false);
-// })
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0, 0x123b, 0x456c, 0x78d).toString())
+		.toBe("2001:db8:ff:abc:0:123b:456c:78d")
 
-// it('validates IPv6 addresses', () => {
-// 	assert.equal(ipaddr.IPv6.isValid('2001:db8:F53A::1'), true);
-// 	assert.equal(ipaddr.IPv6.isValid('200001::1'), false);
-// 	assert.equal(ipaddr.IPv6.isValid('::ffff:192.168.1.1'), true);
-// 	assert.equal(ipaddr.IPv6.isValid('::ffff:192.168.1.1%z'), true);
-// 	assert.equal(ipaddr.IPv6.isValid('::1.1.1.1'), true);
-// 	assert.equal(ipaddr.IPv6.isValid('::1.2.3.4%z'), true);
-// 	assert.equal(ipaddr.IPv6.isValid('::ffff:300.168.1.1'), false);
-// 	assert.equal(ipaddr.IPv6.isValid('::ffff:300.168.1.1:0'), false);
-// 	assert.equal(ipaddr.IPv6.isValid('::ffff:222.1.41.9000'), false);
-// 	assert.equal(ipaddr.IPv6.isValid('2001:db8::F53A::1'), false);
-// 	assert.equal(ipaddr.IPv6.isValid('fe80::wtf'), false);
-// 	assert.equal(ipaddr.IPv6.isValid('fe80::%'), false);
-// 	assert.equal(ipaddr.IPv6.isValid('2002::2:'), false);
-// 	assert.equal(ipaddr.IPv6.isValid('::%z'), true);
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0, 0, 0x456c, 0x78d).toString())
+		.toBe("2001:db8:ff:abc::456c:78d")
 
-// 	assert.equal(ipaddr.IPv6.isValid(undefined), false);
-// })
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1, "utun0").toString()).toBe("2001:db8:f53a::1%utun0")
+	expect(parse("::ffff:192.168.1.1%eth0").toString()).toBe("::ffff:c0a8:101%eth0")
+	expect(parse("::ffff:192.168.1.1%2").toString()).toBe("::ffff:c0a8:101%2")
+	expect(parse("::ffff:192.168.1.1%WAT").toString()).toBe("::ffff:c0a8:101%WAT")
+	expect(parse("::ffff:192.168.1.1%sUp").toString()).toBe("::ffff:c0a8:101%sUp")
+})
 
-// it('parses IPv6 in different formats', () => {
-// 	assert.deepEqual(ipaddr.IPv6.parse('2001:db8:F53A:0:0:0:0:1').parts, [0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1]);
-// 	assert.deepEqual(ipaddr.IPv6.parse('fe80::10').parts, [0xfe80, 0, 0, 0, 0, 0, 0, 0x10]);
-// 	assert.deepEqual(ipaddr.IPv6.parse('2001:db8:F53A::').parts, [0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 0]);
-// 	assert.deepEqual(ipaddr.IPv6.parse('::1').parts, [0, 0, 0, 0, 0, 0, 0, 1]);
-// 	assert.deepEqual(ipaddr.IPv6.parse('::8.8.8.8').parts, [0, 0, 0, 0, 0, 0xffff, 2056, 2056]);
-// 	assert.deepEqual(ipaddr.IPv6.parse('::').parts, [0, 0, 0, 0, 0, 0, 0, 0]);
-// 	assert.deepEqual(ipaddr.IPv6.parse('::%z').parts, [0, 0, 0, 0, 0, 0, 0, 0]);
-// 	assert.deepEqual(ipaddr.IPv6.parse('::%z').zoneId, 'z');
-// })
+test("IPv6.parseCIDR()", () => {
+	expect(IPv6.parseCIDR('0:0:0:0:0:0:0:0/64').toString()).toBe("::/64")
+	expect(IPv6.parseCIDR('0:0:0:ff:ff:0:0:0/64').toString()).toBe("::ff:ff:0:0:0/64")
 
-// it('barfs at invalid IPv6', () => {
-// 	assert.throws(() => {
-// 		ipaddr.IPv6.parse('fe80::0::1');
-// 	});
-// })
+	expect(IPv6.parseCIDR('2001:db8:ff:abc:def:123b:456c:78d/64').toString())
+		.toBe("2001:db8:ff:abc:def:123b:456c:78d/64")
+})
 
-// it('matches IPv6 CIDR correctly', () => {
-// 	let addr = ipaddr.IPv6.parse('2001:db8:f53a::1');
-// 	assert.equal(addr.match(ipaddr.IPv6.parse('::'), 0), true);
-// 	assert.equal(addr.match(ipaddr.IPv6.parse('2001:db8:f53a::1:1'), 64), true);
-// 	assert.equal(addr.match(ipaddr.IPv6.parse('2001:db8:f53b::1:1'), 48), false);
-// 	assert.equal(addr.match(ipaddr.IPv6.parse('2001:db8:f531::1:1'), 44), true);
-// 	assert.equal(addr.match(ipaddr.IPv6.parse('2001:db8:f500::1'), 40), true);
-// 	assert.equal(addr.match(ipaddr.IPv6.parse('2001:db8:f500::1%z'), 40), true);
-// 	assert.equal(addr.match(ipaddr.IPv6.parse('2001:db9:f500::1'), 40), false);
-// 	assert.equal(addr.match(ipaddr.IPv6.parse('2001:db9:f500::1'), 40), false);
-// 	assert.equal(addr.match(ipaddr.IPv6.parse('2001:db9:f500::1%z'), 40), false);
-// 	assert.equal(addr.match(addr, 128), true);
-// })
+// See https://tools.ietf.org/html/rfc5952#section-4
+test("IPv6.prototype.toRFC5952String()", () => {
+	expect((IPv6.fromHextets(8193, 3512, 62778, 0, 0, 0, 0, 1)).toRFC5952String()).toBe("2001:db8:f53a::1")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0, 0).toRFC5952String()).toBe("::")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0, 1).toRFC5952String()).toBe("::1")
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0).toRFC5952String()).toBe("2001:db8::")
 
-// it('parses IPv6 CIDR correctly', () => {
-// 	let addr = ipaddr.IPv6.parse('2001:db8:f53a::1');
-// 	assert.equal(addr.match(ipaddr.IPv6.parseCIDR('::/0')), true);
-// 	assert.equal(addr.match(ipaddr.IPv6.parseCIDR('2001:db8:f53a::1:1/64')), true);
-// 	assert.equal(addr.match(ipaddr.IPv6.parseCIDR('2001:db8:f53b::1:1/48')), false);
-// 	assert.equal(addr.match(ipaddr.IPv6.parseCIDR('2001:db8:f531::1:1/44')), true);
-// 	assert.equal(addr.match(ipaddr.IPv6.parseCIDR('2001:db8:f500::1/40')), true);
-// 	assert.equal(addr.match(ipaddr.IPv6.parseCIDR('2001:db8:f500::1%z/40')), true);
-// 	assert.equal(addr.match(ipaddr.IPv6.parseCIDR('2001:db9:f500::1/40')), false);
-// 	assert.equal(addr.match(ipaddr.IPv6.parseCIDR('2001:db9:f500::1%z/40')), false);
-// 	assert.equal(addr.match(ipaddr.IPv6.parseCIDR('2001:db8:f53a::1/128')), true);
-// 	assert.throws(() => {
-// 		ipaddr.IPv6.parseCIDR('2001:db8:f53a::1');
-// 	});
-// 	assert.throws(() => {
-// 		ipaddr.IPv6.parseCIDR('2001:db8:f53a::1/-1');
-// 	});
-// 	assert.throws(() => {
-// 		ipaddr.IPv6.parseCIDR('2001:db8:f53a::1/129');
-// 	});
-// })
+	// longest set of zeroes gets collapsed (section 4.2.3)
+	expect(IPv6.fromHextets(0, 0xff, 0, 0, 0, 0, 0, 0).toRFC5952String()).toBe("0:ff::")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0xff, 0).toRFC5952String()).toBe("::ff:0")
+	expect(IPv6.fromHextets(0, 0, 0xff, 0, 0, 0, 0, 0).toRFC5952String()).toBe("0:0:ff::")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0xff, 0, 0).toRFC5952String()).toBe("::ff:0:0")
+	expect(IPv6.fromHextets(0x2001, 0, 0, 0, 0xff, 0, 0, 0).toRFC5952String()).toBe("2001::ff:0:0:0")
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0xdef, 0x123b, 0x456c, 0x78d).toRFC5952String()).toBe("2001:db8:ff:abc:def:123b:456c:78d")
 
-// it('converts between IPv4-mapped IPv6 addresses and IPv4 addresses', () => {
-// 	let addr = ipaddr.IPv4.parse('77.88.21.11');
-// 	let mapped = addr.toIPv4MappedAddress();
-// 	assert.deepEqual(mapped.parts, [0, 0, 0, 0, 0, 0xffff, 0x4d58, 0x150b]);
-// 	assert.deepEqual(mapped.toIPv4Address().octets, addr.octets);
-// })
+	// don't shorten single 0s (section 4.2.2)
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0, 0x123b, 0x456c, 0x78d).toRFC5952String()).toBe("2001:db8:ff:abc:0:123b:456c:78d")
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0x78d, 0x123b, 0x456c, 0).toRFC5952String()).toBe("2001:db8:ff:abc:78d:123b:456c:0")
+	expect(IPv6.fromHextets(0, 0xdb8, 0xff, 0xabc, 0x78d, 0x123b, 0x456c, 0x2001).toRFC5952String()).toBe("0:db8:ff:abc:78d:123b:456c:2001")
 
-// it('refuses to convert non-IPv4-mapped IPv6 address to IPv4 address', () => {
-// 	assert.throws(() => {
-// 		ipaddr.IPv6.parse('2001:db8::1').toIPv4Address();
-// 	});
-// })
+	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0, 0, 0x456c, 0x78d).toRFC5952String()).toBe("2001:db8:ff:abc::456c:78d")
+})
 
-// it('detects reserved IPv6 networks', () => {
-// 	assert.equal(ipaddr.IPv6.parse('::').range(), 'unspecified');
-// 	assert.equal(ipaddr.IPv6.parse('fe80::1234:5678:abcd:0123').range(), 'linkLocal');
-// 	assert.equal(ipaddr.IPv6.parse('ff00::1234').range(), 'multicast');
-// 	assert.equal(ipaddr.IPv6.parse('::1').range(), 'loopback');
-// 	assert.equal(ipaddr.IPv6.parse('fc00::').range(), 'uniqueLocal');
-// 	assert.equal(ipaddr.IPv6.parse('::ffff:192.168.1.10').range(), 'ipv4Mapped');
-// 	assert.equal(ipaddr.IPv6.parse('::ffff:0:192.168.1.10').range(), 'rfc6145');
-// 	assert.equal(ipaddr.IPv6.parse('64:ff9b::1234').range(), 'rfc6052');
-// 	assert.equal(ipaddr.IPv6.parse('2002:1f63:45e8::1').range(), '6to4');
-// 	assert.equal(ipaddr.IPv6.parse('2001::4242').range(), 'teredo');
-// 	assert.equal(ipaddr.IPv6.parse('2001:2::').range(), 'benchmarking');
-// 	assert.equal(ipaddr.IPv6.parse('2001:3::').range(), 'amt');
-// 	assert.equal(ipaddr.IPv6.parse('2001:4:112::').range(), 'as112v6');
-// 	assert.equal(ipaddr.IPv6.parse('2001:10::').range(), 'deprecated');
-// 	assert.equal(ipaddr.IPv6.parse('2001:20::').range(), 'orchid2');
-// 	assert.equal(ipaddr.IPv6.parse('2001:db8::3210').range(), 'reserved');
-// 	assert.equal(ipaddr.IPv6.parse('2001:470:8:66::1').range(), 'unicast');
-// 	assert.equal(ipaddr.IPv6.parse('2001:470:8:66::1%z').range(), 'unicast');
-// })
+test("parse()", () => {
+	expect(parse("2001:db8:f53a::1%2").toString()).toBe("2001:db8:f53a::1%2")
+	expect(parse("2001:db8:f53a::1%WAT").toString()).toBe("2001:db8:f53a::1%WAT")
+	expect(parse("2001:db8:f53a::1%sUp").toString()).toBe("2001:db8:f53a::1%sUp")
+	expect(() => parse("::some.nonsense")).toThrow()
+	expect(parse("8.8.8.8")).toBeInstanceOf(IPv4)
+	expect(parse("2001:db8:3312::1")).toBeInstanceOf(IPv6)
+	expect(parse("2001:db8:3312::1%z")).toBeInstanceOf(IPv6)
+})
 
-// it('is able to determine IP address type', () => {
-// 	assert.equal(ipaddr.parse('8.8.8.8').kind(), 'ipv4');
-// 	assert.equal(ipaddr.parse('2001:db8:3312::1').kind(), 'ipv6');
-// 	assert.equal(ipaddr.parse('2001:db8:3312::1%z').kind(), 'ipv6');
-// })
+test("IPv6.isIPv6()", () => {
+	expect(IPv6.isIPv6("2001:db8:F53A::1")).toBe(true)
+	expect(IPv6.isIPv6("200001::1")).toBe(true)
+	expect(IPv6.isIPv6("::ffff:192.168.1.1")).toBe(true)
+	expect(IPv6.isIPv6("::ffff:192.168.1.1%z")).toBe(true)
+	expect(IPv6.isIPv6("::10.2.3.4")).toBe(true)
+	expect(IPv6.isIPv6("::12.34.56.78%z")).toBe(true)
+	expect(IPv6.isIPv6("::ffff:300.168.1.1")).toBe(false)
+	expect(IPv6.isIPv6("::ffff:300.168.1.1:0")).toBe(false)
+	expect(IPv6.isIPv6("fe80::foo")).toBe(false)
+	expect(IPv6.isIPv6("fe80::%")).toBe(false)
+})
 
-// it('throws an error if tried to parse an invalid address', () => {
-// 	assert.throws(() => {
-// 		ipaddr.parse('::some.nonsense');
-// 	});
-// })
+test("IPv6.isValid()", () => {
+	expect(IPv6.isValid("2001:db8:F53A::1")).toBe(true)
+	expect(IPv6.isValid("200001::1")).toBe(false)
+	expect(IPv6.isValid("::ffff:192.168.1.1")).toBe(true)
+	expect(IPv6.isValid("::ffff:192.168.1.1%z")).toBe(true)
+	expect(IPv6.isValid("::1.1.1.1")).toBe(true)
+	expect(IPv6.isValid("::1.2.3.4%z")).toBe(true)
+	expect(IPv6.isValid("::ffff:300.168.1.1")).toBe(false)
+	expect(IPv6.isValid("::ffff:300.168.1.1:0")).toBe(false)
+	expect(IPv6.isValid("::ffff:222.1.41.9000")).toBe(false)
+	expect(IPv6.isValid("2001:db8::F53A::1")).toBe(false)
+	expect(IPv6.isValid("fe80::foo")).toBe(false)
+	expect(IPv6.isValid("fe80::%")).toBe(false)
+	expect(IPv6.isValid("2002::2:")).toBe(false)
+	expect(IPv6.isValid("::%z")).toBe(true)
+	expect(IPv6.isValid("")).toBe(false)
+})
 
-// it('correctly processes IPv4-mapped addresses', () => {
-// 	assert.equal(ipaddr.process('8.8.8.8').kind(), 'ipv4');
-// 	assert.equal(ipaddr.process('2001:db8:3312::1').kind(), 'ipv6');
-// 	assert.equal(ipaddr.process('::ffff:192.168.1.1').kind(), 'ipv4');
-// 	assert.equal(ipaddr.process('::ffff:192.168.1.1%z').kind(), 'ipv4');
-// 	assert.equal(ipaddr.process('::8.8.8.8').kind(), 'ipv4');
-// })
+test("IPv6.parse()", () => {
+	expect(IPv6.parse("2001:db8:F53A:0:0:0:0:1").hextets)
+		.toEqual(new Uint16Array([ 0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1 ]))
 
-// it('correctly converts IPv6 and IPv4 addresses to byte arrays', () => {
-// 	assert.deepEqual(
-// 		ipaddr.parse('1.2.3.4').toByteArray(),
-// 		[0x1, 0x2, 0x3, 0x4]
-// 	);
-// 	// Fuck yeah. The first byte of Google's IPv6 address is 42. 42!
-// 	assert.deepEqual(
-// 		ipaddr.parse('2a00:1450:8007::68').toByteArray(),
-// 		[42, 0x00, 0x14, 0x50, 0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68]
-// 	);
-// 	assert.deepEqual(
-// 		ipaddr.parse('2a00:1450:8007::68%z').toByteArray(),
-// 		[42, 0x00, 0x14, 0x50, 0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68]
-// 	);
-// })
+	expect(IPv6.parse("fe80::10").hextets).toEqual(new Uint16Array([ 0xfe80, 0, 0, 0, 0, 0, 0, 0x10 ]))
+	expect(IPv6.parse("2001:db8:F53A::").hextets).toEqual(new Uint16Array([ 0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 0 ]))
+	expect(IPv6.parse("::1").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0, 0, 1 ]))
+	expect(IPv6.parse("::8.8.8.8").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0xffff, 2056, 2056 ]))
+	expect(IPv6.parse("::").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0, 0, 0 ]))
+	expect(IPv6.parse("::%z").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0, 0, 0 ]))
+	expect(IPv6.parse("::%z").zoneId).toEqual("z")
+	expect(() => IPv6.parse("fe80::0::1")).toThrow()
+})
+
+test("IPv6.prototype.match()", () => {
+	const address = IPv6.parse("2001:db8:f53a::1")
+
+	expect(address.match(IPv6.parse("::"), 0)).toBe(true)
+	expect(address.match(IPv6.parse("2001:db8:f53a::1:1"), 64)).toBe(true)
+	expect(address.match(IPv6.parse("2001:db8:f53b::1:1"), 48)).toBe(false)
+	expect(address.match(IPv6.parse("2001:db8:f531::1:1"), 44)).toBe(true)
+	expect(address.match(IPv6.parse("2001:db8:f500::1"), 40)).toBe(true)
+	expect(address.match(IPv6.parse("2001:db8:f500::1%z"), 40)).toBe(true)
+	expect(address.match(IPv6.parse("2001:db9:f500::1"), 40)).toBe(false)
+	expect(address.match(IPv6.parse("2001:db9:f500::1%z"), 40)).toBe(false)
+	expect(address.match(address, 128)).toBe(true)
+})
+
+test("IPv6.parseCIDR()", () => {
+	const address = IPv6.parse("2001:db8:f53a::1")
+
+	expect(address.match(...IPv6.parseCIDR("::/0"))).toBe(true)
+	expect(address.match(...IPv6.parseCIDR("2001:db8:f53a::1:1/64"))).toBe(true)
+	expect(address.match(...IPv6.parseCIDR("2001:db8:f53b::1:1/48"))).toBe(false)
+	expect(address.match(...IPv6.parseCIDR("2001:db8:f531::1:1/44"))).toBe(true)
+	expect(address.match(...IPv6.parseCIDR("2001:db8:f500::1/40"))).toBe(true)
+	expect(address.match(...IPv6.parseCIDR("2001:db8:f500::1%z/40"))).toBe(true)
+	expect(address.match(...IPv6.parseCIDR("2001:db9:f500::1/40"))).toBe(false)
+	expect(address.match(...IPv6.parseCIDR("2001:db9:f500::1%z/40"))).toBe(false)
+	expect(address.match(...IPv6.parseCIDR("2001:db8:f53a::1/128"))).toBe(true)
+	expect(() => IPv6.parseCIDR("2001:db8:f53a::1")).toThrow()
+	expect(() => IPv6.parseCIDR("2001:db8:f53a::1/-1")).toThrow()
+	expect(() => IPv6.parseCIDR("2001:db8:f53a::1/129")).toThrow()
+})
+
+test("IPv4.prototype.toIPv4MappedAddress()", () => {
+	const address = IPv4.parse("77.88.21.11")
+	const mappedAddress = address.toIPv4MappedAddress()
+
+	expect(mappedAddress.hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0xffff, 0x4d58, 0x150b ]))
+	expect(mappedAddress.toIPv4Address().octets).toEqual(address.octets)
+})
+
+test("IPv6.prototype.toIPv4Address()", () => {
+	expect(() => IPv6.parse("2001:db8::1").toIPv4Address()).toThrow()
+})
+
+test("IPv6.prototype.range()", () => {
+	expect(IPv6.parse("::").range()).toBe("unspecified")
+	expect(IPv6.parse("fe80::1234:5678:abcd:0123").range()).toBe("linkLocal")
+	expect(IPv6.parse("ff00::1234").range()).toBe("multicast")
+	expect(IPv6.parse("::1").range()).toBe("loopback")
+	expect(IPv6.parse("fc00::").range()).toBe("uniqueLocal")
+	expect(IPv6.parse("::ffff:192.168.1.10").range()).toBe("ipv4Mapped")
+	expect(IPv6.parse("::ffff:0:192.168.1.10").range()).toBe("rfc6145")
+	expect(IPv6.parse("2002:1f63:45e8::1").range()).toBe("6to4")
+	expect(IPv6.parse("2001::4242").range()).toBe("teredo")
+	expect(IPv6.parse("2001:2::").range()).toBe("benchmarking")
+	expect(IPv6.parse("2001:3::").range()).toBe("amt")
+	expect(IPv6.parse("2001:4:112::").range()).toBe("as112v6")
+	expect(IPv6.parse("2001:10::").range()).toBe("deprecated")
+	expect(IPv6.parse("2001:20::").range()).toBe("orchid2")
+	expect(IPv6.parse("2001:db8::3210").range()).toBe("reserved")
+	expect(IPv6.parse("2001:470:8:66::1").range()).toBe("unicast")
+	expect(IPv6.parse("2001:470:8:66::1%z").range()).toBe("unicast")
+})
+
+test("process()", () => {
+	expect(process("8.8.8.8")).toBeInstanceOf(IPv4)
+	expect(process("2001:db8:3312::1")).toBeInstanceOf(IPv6)
+	expect(process("::ffff:192.168.1.1")).toBeInstanceOf(IPv4)
+	expect(process("::ffff:192.168.1.1%z")).toBeInstanceOf(IPv4)
+	expect(process("::8.8.8.8")).toBeInstanceOf(IPv4)
+})
+
+test("IPv{4,6}.prototype.toByteArray()", () => {
+	expect(parse("1.2.3.4").toByteArray()).toEqual(new Uint8Array([ 0x1, 0x2, 0x3, 0x4 ]))
+
+	expect(parse("2a00:1450:8007::68").toByteArray()).toEqual(
+		new Uint8Array([ 42, 0x00, 0x14, 0x50, 0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68 ])
+	)
+})
 
 // it('correctly parses 1 as an IPv4 address', () => {
 // 	assert.equal(ipaddr.IPv6.isValid('1'), false);
@@ -477,7 +424,6 @@ describe("IPv4.parse()", () => {
 // 		ipaddr.fromByteArray([1]);
 // 	});
 // })
-
 
 // it('prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv4 masks', () => {
 // 	assert.equal(ipaddr.IPv4.parse('255.255.255.255').prefixLengthFromSubnetMask(), 32);
