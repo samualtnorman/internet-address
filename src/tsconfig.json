@@ -4,7 +4,11 @@
 		"noUncheckedIndexedAccess": true,
 		"strict": true,
 		"useUnknownInCatchVariables": true,
-		"strictNullChecks": true
+		"strictNullChecks": true,
+		"declaration": true,
+		"emitDeclarationOnly": true,
+		"noEmit": false,
+		"outDir": "../dist"
 	},
 	"extends": "..",
 	"include": [ "**/*" ]

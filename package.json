@@ -15,17 +15,13 @@
 		"Samual Norman <me@samual.uk> (https://samual.uk/)"
 	],
 	"repository": "github:samualtnorman/ipaddr.js",
-	"scripts": {
-		"build": "rollup --config",
-		"test": "vitest"
-	},
 	"devDependencies": {
 		"@babel/preset-env": "^7.23.6",
 		"@babel/preset-typescript": "^7.23.3",
 		"@rollup/plugin-babel": "^6.0.4",
 		"rollup": "^4.9.1",
 		"typescript": "^5.3.3",
-		"vitest": "^1.0.4"
+		"vitest": "^1.1.0"
 	},
 	"engines": {
 		"node": ">=20.9.0"
