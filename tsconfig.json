@@ -15,5 +15,5 @@
 		"skipLibCheck": true,
 		"module": "ESNext"
 	},
-	"include": [ "*", "test/**/*" ]
+	"include": [ "*", "scripts/**/*", "test/**/*" ]
 }

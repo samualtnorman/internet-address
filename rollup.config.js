@@ -4,9 +4,7 @@ import { babel } from "@rollup/plugin-babel"
 /** @type {import("rollup").RollupOptions} */
 export default {
 	input: "src/index.ts",
-	output: {
-		file: "dist/index.js"
-	},
+	output: { file: "dist/index.js" },
 	plugins: [
 		babel({
 			babelHelpers: "bundled",

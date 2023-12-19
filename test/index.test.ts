@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-null */
 import { describe, expect, test } from "vitest"
 import { IPv4, IPv6, RangeList, fromByteArray, isValid, parse, parseCIDR, process, subnetMatch } from "../src"
 
@@ -65,8 +66,6 @@ describe("IPv4.parse()", () => {
 		test("invalid octal", () => expect(() => IPv4.parse("86.08.13.97")).toThrow())
 	})
 })
-
-IPv4.fromBytes(10, 5, 0, 1).match
 
 test("IPv4.prototype.match()", () => {
 	const address = IPv4.fromBytes(10, 5, 0, 1)
@@ -142,60 +141,60 @@ describe("IPv4.isValidFourPartDecimal()", () => {
 })
 
 describe("new IPv6()", () => {
-	const u16View = new Uint16Array([ 0x2001, 0xDB8, 0xF53A, 0, 0, 0, 0, 1 ])
+	const u16View = new Uint16Array([ 0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1 ])
 
 	expect(new IPv6(u16View).hextets).toBe(u16View)
 
 	test("reject invalid Uint16Array", () =>
-		expect(() => new IPv6(new Uint16Array([ 51949, 17327, 14492, 12043, 34687, 33000, 19107 ]))).toThrow(Error)
+		expect(() => new IPv6(new Uint16Array([ 51_949, 17_327, 14_492, 12_043, 34_687, 33_000, 19_107 ]))).toThrow(Error)
 	)
 })
 
 test("IPv6.fromBytes()", () =>
 	expect(IPv6.fromBytes(58, 19, 11, 144, 148, 239, 218, 206, 117, 61, 108, 90, 134, 0, 148, 47).hextets)
-		.toEqual(new Uint16Array([ 14867, 2960, 38127, 56014, 30013, 27738, 34304, 37935 ]))
+		.toEqual(new Uint16Array([ 14_867, 2960, 38_127, 56_014, 30_013, 27_738, 34_304, 37_935 ]))
 )
 
 test("IPv6.fromHextets()", () =>
-	expect(IPv6.fromHextets(42760, 21232, 25849, 30266, 13260, 63680, 46381, 38566).hextets)
-		.toEqual(new Uint16Array([ 42760, 21232, 25849, 30266, 13260, 63680, 46381, 38566 ]))
+	expect(IPv6.fromHextets(42_760, 21_232, 25_849, 30_266, 13_260, 63_680, 46_381, 38_566).hextets)
+		.toEqual(new Uint16Array([ 42_760, 21_232, 25_849, 30_266, 13_260, 63_680, 46_381, 38_566 ]))
 )
 
 test("IPv6.prototype.toNormalizedString()", () => {
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1).toNormalizedString()).toBe("2001:db8:f53a:0:0:0:0:1")
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1).toNormalizedString()).toBe("2001:db8:f53a:0:0:0:0:1")
 
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1, "utun0").toNormalizedString())
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1, "utun0").toNormalizedString())
 		.toBe("2001:db8:f53a:0:0:0:0:1%utun0")
 
 	expect(parse("::ffff:192.168.1.1%eth0").toNormalizedString()).toBe("0:0:0:0:0:ffff:c0a8:101%eth0")
 })
 
 test("IPv6.prototype.toFixedLengthString()", () =>
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1).toFixedLengthString())
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1).toFixedLengthString())
 		.toBe("2001:0db8:f53a:0000:0000:0000:0000:0001")
 )
 
 test("IPv6.prototype.toString()", () => {
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1).toString()).toBe("2001:db8:f53a::1")
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1).toString()).toBe("2001:db8:f53a::1")
 	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0, 0).toString()).toBe("::")
 	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0, 1).toString()).toBe("::1")
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0).toString()).toBe("2001:db8::")
-	expect(IPv6.fromHextets(0, 0xff, 0, 0, 0, 0, 0, 0).toString()).toBe("0:ff::")
-	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0xff, 0).toString()).toBe("::ff:0")
-	expect(IPv6.fromHextets(0, 0, 0xff, 0, 0, 0, 0, 0).toString()).toBe("0:0:ff::")
-	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0xff, 0, 0).toString()).toBe("::ff:0:0")
-	expect(IPv6.fromHextets(0, 0, 0, 0xff, 0xff, 0, 0, 0).toString()).toBe("::ff:ff:0:0:0")
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0, 0, 0, 0, 0, 0).toString()).toBe("2001:db8::")
+	expect(IPv6.fromHextets(0, 0xFF, 0, 0, 0, 0, 0, 0).toString()).toBe("0:ff::")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0xFF, 0).toString()).toBe("::ff:0")
+	expect(IPv6.fromHextets(0, 0, 0xFF, 0, 0, 0, 0, 0).toString()).toBe("0:0:ff::")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0xFF, 0, 0).toString()).toBe("::ff:0:0")
+	expect(IPv6.fromHextets(0, 0, 0, 0xFF, 0xFF, 0, 0, 0).toString()).toBe("::ff:ff:0:0:0")
 
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0xdef, 0x123b, 0x456c, 0x78d).toString())
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xFF, 0xA_BC, 0xD_EF, 0x12_3B, 0x45_6C, 0x7_8D).toString())
 		.toBe("2001:db8:ff:abc:def:123b:456c:78d")
 
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0, 0x123b, 0x456c, 0x78d).toString())
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xFF, 0xA_BC, 0, 0x12_3B, 0x45_6C, 0x7_8D).toString())
 		.toBe("2001:db8:ff:abc:0:123b:456c:78d")
 
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0, 0, 0x456c, 0x78d).toString())
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xFF, 0xA_BC, 0, 0, 0x45_6C, 0x7_8D).toString())
 		.toBe("2001:db8:ff:abc::456c:78d")
 
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1, "utun0").toString()).toBe("2001:db8:f53a::1%utun0")
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1, "utun0").toString()).toBe("2001:db8:f53a::1%utun0")
 	expect(parse("::ffff:192.168.1.1%eth0").toString()).toBe("::ffff:c0a8:101%eth0")
 	expect(parse("::ffff:192.168.1.1%2").toString()).toBe("::ffff:c0a8:101%2")
 	expect(parse("::ffff:192.168.1.1%WAT").toString()).toBe("::ffff:c0a8:101%WAT")
@@ -212,25 +211,22 @@ test("IPv6.parseCIDR()", () => {
 
 // See https://tools.ietf.org/html/rfc5952#section-4
 test("IPv6.prototype.toRFC5952String()", () => {
-	expect((IPv6.fromHextets(8193, 3512, 62778, 0, 0, 0, 0, 1)).toRFC5952String()).toBe("2001:db8:f53a::1")
+	expect((IPv6.fromHextets(8193, 3512, 62_778, 0, 0, 0, 0, 1)).toRFC5952String()).toBe("2001:db8:f53a::1")
 	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0, 0).toRFC5952String()).toBe("::")
 	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0, 1).toRFC5952String()).toBe("::1")
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0).toRFC5952String()).toBe("2001:db8::")
-
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0, 0, 0, 0, 0, 0).toRFC5952String()).toBe("2001:db8::")
 	// longest set of zeroes gets collapsed (section 4.2.3)
-	expect(IPv6.fromHextets(0, 0xff, 0, 0, 0, 0, 0, 0).toRFC5952String()).toBe("0:ff::")
-	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0xff, 0).toRFC5952String()).toBe("::ff:0")
-	expect(IPv6.fromHextets(0, 0, 0xff, 0, 0, 0, 0, 0).toRFC5952String()).toBe("0:0:ff::")
-	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0xff, 0, 0).toRFC5952String()).toBe("::ff:0:0")
-	expect(IPv6.fromHextets(0x2001, 0, 0, 0, 0xff, 0, 0, 0).toRFC5952String()).toBe("2001::ff:0:0:0")
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0xdef, 0x123b, 0x456c, 0x78d).toRFC5952String()).toBe("2001:db8:ff:abc:def:123b:456c:78d")
-
+	expect(IPv6.fromHextets(0, 0xFF, 0, 0, 0, 0, 0, 0).toRFC5952String()).toBe("0:ff::")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0xFF, 0).toRFC5952String()).toBe("::ff:0")
+	expect(IPv6.fromHextets(0, 0, 0xFF, 0, 0, 0, 0, 0).toRFC5952String()).toBe("0:0:ff::")
+	expect(IPv6.fromHextets(0, 0, 0, 0, 0, 0xFF, 0, 0).toRFC5952String()).toBe("::ff:0:0")
+	expect(IPv6.fromHextets(0x20_01, 0, 0, 0, 0xFF, 0, 0, 0).toRFC5952String()).toBe("2001::ff:0:0:0")
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xFF, 0xA_BC, 0xD_EF, 0x12_3B, 0x45_6C, 0x7_8D).toRFC5952String()).toBe("2001:db8:ff:abc:def:123b:456c:78d")
 	// don't shorten single 0s (section 4.2.2)
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0, 0x123b, 0x456c, 0x78d).toRFC5952String()).toBe("2001:db8:ff:abc:0:123b:456c:78d")
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0x78d, 0x123b, 0x456c, 0).toRFC5952String()).toBe("2001:db8:ff:abc:78d:123b:456c:0")
-	expect(IPv6.fromHextets(0, 0xdb8, 0xff, 0xabc, 0x78d, 0x123b, 0x456c, 0x2001).toRFC5952String()).toBe("0:db8:ff:abc:78d:123b:456c:2001")
-
-	expect(IPv6.fromHextets(0x2001, 0xdb8, 0xff, 0xabc, 0, 0, 0x456c, 0x78d).toRFC5952String()).toBe("2001:db8:ff:abc::456c:78d")
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xFF, 0xA_BC, 0, 0x12_3B, 0x45_6C, 0x7_8D).toRFC5952String()).toBe("2001:db8:ff:abc:0:123b:456c:78d")
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xFF, 0xA_BC, 0x7_8D, 0x12_3B, 0x45_6C, 0).toRFC5952String()).toBe("2001:db8:ff:abc:78d:123b:456c:0")
+	expect(IPv6.fromHextets(0, 0xD_B8, 0xFF, 0xA_BC, 0x7_8D, 0x12_3B, 0x45_6C, 0x20_01).toRFC5952String()).toBe("0:db8:ff:abc:78d:123b:456c:2001")
+	expect(IPv6.fromHextets(0x20_01, 0xD_B8, 0xFF, 0xA_BC, 0, 0, 0x45_6C, 0x7_8D).toRFC5952String()).toBe("2001:db8:ff:abc::456c:78d")
 })
 
 test("parse()", () => {
@@ -280,12 +276,12 @@ test("IPv6.isValid()", () => {
 
 test("IPv6.parse()", () => {
 	expect(IPv6.parse("2001:db8:F53A:0:0:0:0:1").hextets)
-		.toEqual(new Uint16Array([ 0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 1 ]))
+		.toEqual(new Uint16Array([ 0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1 ]))
 
-	expect(IPv6.parse("fe80::10").hextets).toEqual(new Uint16Array([ 0xfe80, 0, 0, 0, 0, 0, 0, 0x10 ]))
-	expect(IPv6.parse("2001:db8:F53A::").hextets).toEqual(new Uint16Array([ 0x2001, 0xdb8, 0xf53a, 0, 0, 0, 0, 0 ]))
+	expect(IPv6.parse("fe80::10").hextets).toEqual(new Uint16Array([ 0xFE_80, 0, 0, 0, 0, 0, 0, 0x10 ]))
+	expect(IPv6.parse("2001:db8:F53A::").hextets).toEqual(new Uint16Array([ 0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 0 ]))
 	expect(IPv6.parse("::1").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0, 0, 1 ]))
-	expect(IPv6.parse("::8.8.8.8").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0xffff, 2056, 2056 ]))
+	expect(IPv6.parse("::8.8.8.8").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0xFF_FF, 2056, 2056 ]))
 	expect(IPv6.parse("::").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0, 0, 0 ]))
 	expect(IPv6.parse("::%z").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0, 0, 0 ]))
 	expect(IPv6.parse("::%z").zoneId).toEqual("z")
@@ -327,7 +323,7 @@ test("IPv4.prototype.toIPv4MappedAddress()", () => {
 	const address = IPv4.parse("77.88.21.11")
 	const mappedAddress = address.toIPv4MappedAddress()
 
-	expect(mappedAddress.hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0xffff, 0x4d58, 0x150b ]))
+	expect(mappedAddress.hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0xFF_FF, 0x4D_58, 0x15_0B ]))
 	expect(mappedAddress.toIPv4Address().octets).toEqual(address.octets)
 })
 
@@ -380,11 +376,11 @@ test("subnetMatch()", () => {
 	expect(subnetMatch(IPv4.fromBytes(1, 2, 3, 4), new Map, "foo")).toBe("foo")
 	expect(subnetMatch(IPv4.fromBytes(1, 2, 3, 4), new Map([ [ "subnet", [] ] ]), "bar")).toBe("bar")
 
-	expect(subnetMatch(IPv4.fromBytes(1, 2, 3, 4), new Map([ [ "subnet6", [ parseCIDR("fe80::/64") ] ] ]), "foo")).
-		toBe("foo")
+	expect(subnetMatch(IPv4.fromBytes(1, 2, 3, 4), new Map([ [ "subnet6", [ parseCIDR("fe80::/64") ] ] ]), "foo"))
+		.toBe("foo")
 
 	expect(subnetMatch(
-		IPv6.fromHextets(0xFE80, 0, 0, 0, 0, 0, 0, 1), new Map([ [ "subnet4", [ parseCIDR("1.2.3.0/24") ] ] ]),
+		IPv6.fromHextets(0xFE_80, 0, 0, 0, 0, 0, 0, 1), new Map([ [ "subnet4", [ parseCIDR("1.2.3.0/24") ] ] ]),
 		"foo"
 	)).toBe("foo")
 
@@ -392,12 +388,12 @@ test("subnetMatch()", () => {
 		new Map([ [ "dual64", [ parseCIDR("1.2.4.0/24"), parseCIDR("2001:1:2:3::/64") ] ] ])
 
 	expect(subnetMatch(IPv4.fromBytes(1, 2, 4, 1), rangeList, "foo")).toBe("dual64")
-	expect(subnetMatch(IPv6.fromHextets(0x2001, 1, 2, 3, 0, 0, 0, 1), rangeList, "foo")).toBe("dual64")
+	expect(subnetMatch(IPv6.fromHextets(0x20_01, 1, 2, 3, 0, 0, 0, 1), rangeList, "foo")).toBe("dual64")
 })
 
 test("fromByteArray()", () => {
-	expect(fromByteArray([ 0x7f, 0, 0, 1 ])).instanceOf(IPv4)
-	expect(fromByteArray([ 0x20, 0x01, 0xd, 0xb8, 0xf5, 0x3a, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ])).instanceOf(IPv6)
+	expect(fromByteArray([ 0x7F, 0, 0, 1 ])).instanceOf(IPv4)
+	expect(fromByteArray([ 0x20, 0x01, 0xD, 0xB8, 0xF5, 0x3A, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ])).instanceOf(IPv6)
 	expect(() => fromByteArray([ 1 ])).toThrow()
 })
 
