@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { IPv4, IPv6, parse, parseCIDR, process } from "../src"
+import { IPv4, IPv6, RangeList, fromByteArray, isValid, parse, parseCIDR, process, subnetMatch } from "../src"
 
 describe("new IPv4()", () => {
 	const u8View = new Uint8Array([ 167, 162, 196, 35 ])
@@ -24,7 +24,7 @@ test("IPv4.prototype.toNormalizedString()", () =>
 )
 
 test("IPv4.parseCIDR()", () =>
-	expect((IPv4.parseCIDR("108.78.3.18/24"))).toEqual([ IPv4.fromBytes(108, 78, 3, 18), 24 ])
+	expect((IPv4.parseCIDR("108.78.3.18/24"))).toEqual({ ip: IPv4.fromBytes(108, 78, 3, 18), bits: 24 })
 )
 
 test("IPv4.parseCIDR().toString()", () =>
@@ -41,6 +41,7 @@ describe("IPv4.isValid()", () => {
 	expect(IPv4.isValid("120.206.0370.0xCA")).toBe(true)
 	test("detect invalid IPv4", () => expect(IPv4.isValid("256.163.10.46")).toBe(false))
 	test("detect non-IPv4 string", () => expect(IPv4.isValid("113.0x34.foo.117")).toBe(false))
+	expect(IPv4.isValid("1")).toBe(true)
 })
 
 describe("IPv4.parse()", () => {
@@ -61,7 +62,7 @@ describe("IPv4.parse()", () => {
 			test("3 parts", () => expect(() => IPv4.parse("96.197.65536")).toThrow())
 		})
 
-		test("invalid octal", () => expect(() => IPv4.parse('86.08.13.97')).toThrow())
+		test("invalid octal", () => expect(() => IPv4.parse("86.08.13.97")).toThrow())
 	})
 })
 
@@ -85,22 +86,24 @@ test("IPv4.prototype.match()", () => {
 test("parseCIDR()", () => {
 	expect(parseCIDR("1.2.3.4/24").toString()).toBe("1.2.3.4/24")
 	expect(parseCIDR("::1%zone/24").toString()).toBe("::1%zone/24")
+	expect(parseCIDR("fc00::/64")).toEqual({ ip: IPv6.parse("fc00::"), bits: 64 })
+	expect(parseCIDR("1.2.3.4/5")).toEqual({ ip: IPv4.parse("1.2.3.4"), bits: 5 })
 })
 
 test("IPv4.parseCIDR()", () => {
 	const address = IPv4.fromBytes(10, 5, 0, 1)
 
-	expect(address.match(...IPv4.parseCIDR("0.0.0.0/0"))).toBe(true)
-	expect(address.match(...IPv4.parseCIDR("11.0.0.0/8"))).toBe(false)
-	expect(address.match(...IPv4.parseCIDR("10.0.0.0/8"))).toBe(true)
-	expect(address.match(...IPv4.parseCIDR("10.0.0.1/8"))).toBe(true)
-	expect(address.match(...IPv4.parseCIDR("10.0.0.10/8"))).toBe(true)
-	expect(address.match(...IPv4.parseCIDR("10.0.0.10/8"))).toBe(true)
-	expect(address.match(...IPv4.parseCIDR("10.5.5.0/16"))).toBe(true)
-	expect(address.match(...IPv4.parseCIDR("10.4.5.0/16"))).toBe(false)
-	expect(address.match(...IPv4.parseCIDR("10.4.5.0/15"))).toBe(true)
-	expect(address.match(...IPv4.parseCIDR("10.5.0.2/32"))).toBe(false)
-	expect(address.match(...IPv4.parseCIDR("10.5.0.1/32"))).toBe(true)
+	expect(address.matchCIDR(IPv4.parseCIDR("0.0.0.0/0"))).toBe(true)
+	expect(address.matchCIDR(IPv4.parseCIDR("11.0.0.0/8"))).toBe(false)
+	expect(address.matchCIDR(IPv4.parseCIDR("10.0.0.0/8"))).toBe(true)
+	expect(address.matchCIDR(IPv4.parseCIDR("10.0.0.1/8"))).toBe(true)
+	expect(address.matchCIDR(IPv4.parseCIDR("10.0.0.10/8"))).toBe(true)
+	expect(address.matchCIDR(IPv4.parseCIDR("10.0.0.10/8"))).toBe(true)
+	expect(address.matchCIDR(IPv4.parseCIDR("10.5.5.0/16"))).toBe(true)
+	expect(address.matchCIDR(IPv4.parseCIDR("10.4.5.0/16"))).toBe(false)
+	expect(address.matchCIDR(IPv4.parseCIDR("10.4.5.0/15"))).toBe(true)
+	expect(address.matchCIDR(IPv4.parseCIDR("10.5.0.2/32"))).toBe(false)
+	expect(address.matchCIDR(IPv4.parseCIDR("10.5.0.1/32"))).toBe(true)
 	expect(() => IPv4.parseCIDR("10.5.0.1")).toThrow(Error)
 	expect(() => IPv4.parseCIDR("0.0.0.0/-1")).toThrow(Error)
 	expect(() => IPv4.parseCIDR("0.0.0.0/33")).toThrow(Error)
@@ -200,10 +203,10 @@ test("IPv6.prototype.toString()", () => {
 })
 
 test("IPv6.parseCIDR()", () => {
-	expect(IPv6.parseCIDR('0:0:0:0:0:0:0:0/64').toString()).toBe("::/64")
-	expect(IPv6.parseCIDR('0:0:0:ff:ff:0:0:0/64').toString()).toBe("::ff:ff:0:0:0/64")
+	expect(IPv6.parseCIDR("0:0:0:0:0:0:0:0/64").toString()).toBe("::/64")
+	expect(IPv6.parseCIDR("0:0:0:ff:ff:0:0:0/64").toString()).toBe("::ff:ff:0:0:0/64")
 
-	expect(IPv6.parseCIDR('2001:db8:ff:abc:def:123b:456c:78d/64').toString())
+	expect(IPv6.parseCIDR("2001:db8:ff:abc:def:123b:456c:78d/64").toString())
 		.toBe("2001:db8:ff:abc:def:123b:456c:78d/64")
 })
 
@@ -238,6 +241,7 @@ test("parse()", () => {
 	expect(parse("8.8.8.8")).toBeInstanceOf(IPv4)
 	expect(parse("2001:db8:3312::1")).toBeInstanceOf(IPv6)
 	expect(parse("2001:db8:3312::1%z")).toBeInstanceOf(IPv6)
+	expect(parse("1")).toEqual(IPv4.fromBytes(0, 0, 0, 1))
 })
 
 test("IPv6.isIPv6()", () => {
@@ -269,6 +273,9 @@ test("IPv6.isValid()", () => {
 	expect(IPv6.isValid("2002::2:")).toBe(false)
 	expect(IPv6.isValid("::%z")).toBe(true)
 	expect(IPv6.isValid("")).toBe(false)
+	expect(IPv6.isValid("1")).toBe(false)
+	expect(IPv6.isValid("::8:8:8:8:8:8:8:8:8")).toBe(false)
+	expect(IPv6.isValid("::8:8:8:8:8:8:8:8:8%z")).toBe(false)
 })
 
 test("IPv6.parse()", () => {
@@ -302,15 +309,15 @@ test("IPv6.prototype.match()", () => {
 test("IPv6.parseCIDR()", () => {
 	const address = IPv6.parse("2001:db8:f53a::1")
 
-	expect(address.match(...IPv6.parseCIDR("::/0"))).toBe(true)
-	expect(address.match(...IPv6.parseCIDR("2001:db8:f53a::1:1/64"))).toBe(true)
-	expect(address.match(...IPv6.parseCIDR("2001:db8:f53b::1:1/48"))).toBe(false)
-	expect(address.match(...IPv6.parseCIDR("2001:db8:f531::1:1/44"))).toBe(true)
-	expect(address.match(...IPv6.parseCIDR("2001:db8:f500::1/40"))).toBe(true)
-	expect(address.match(...IPv6.parseCIDR("2001:db8:f500::1%z/40"))).toBe(true)
-	expect(address.match(...IPv6.parseCIDR("2001:db9:f500::1/40"))).toBe(false)
-	expect(address.match(...IPv6.parseCIDR("2001:db9:f500::1%z/40"))).toBe(false)
-	expect(address.match(...IPv6.parseCIDR("2001:db8:f53a::1/128"))).toBe(true)
+	expect(address.matchCIDR(IPv6.parseCIDR("::/0"))).toBe(true)
+	expect(address.matchCIDR(IPv6.parseCIDR("2001:db8:f53a::1:1/64"))).toBe(true)
+	expect(address.matchCIDR(IPv6.parseCIDR("2001:db8:f53b::1:1/48"))).toBe(false)
+	expect(address.matchCIDR(IPv6.parseCIDR("2001:db8:f531::1:1/44"))).toBe(true)
+	expect(address.matchCIDR(IPv6.parseCIDR("2001:db8:f500::1/40"))).toBe(true)
+	expect(address.matchCIDR(IPv6.parseCIDR("2001:db8:f500::1%z/40"))).toBe(true)
+	expect(address.matchCIDR(IPv6.parseCIDR("2001:db9:f500::1/40"))).toBe(false)
+	expect(address.matchCIDR(IPv6.parseCIDR("2001:db9:f500::1%z/40"))).toBe(false)
+	expect(address.matchCIDR(IPv6.parseCIDR("2001:db8:f53a::1/128"))).toBe(true)
 	expect(() => IPv6.parseCIDR("2001:db8:f53a::1")).toThrow()
 	expect(() => IPv6.parseCIDR("2001:db8:f53a::1/-1")).toThrow()
 	expect(() => IPv6.parseCIDR("2001:db8:f53a::1/129")).toThrow()
@@ -364,203 +371,166 @@ test("IPv{4,6}.prototype.toByteArray()", () => {
 	)
 })
 
-// it('correctly parses 1 as an IPv4 address', () => {
-// 	assert.equal(ipaddr.IPv6.isValid('1'), false);
-// 	assert.equal(ipaddr.IPv4.isValid('1'), true);
-// 	assert.deepEqual(new ipaddr.IPv4([0, 0, 0, 1]), ipaddr.parse('1'));
-// })
+test("isValid()", () => {
+	expect(isValid("4999999999")).toBe(false)
+	expect(isValid("-1")).toBe(false)
+})
 
-// it('correctly detects IPv4 and IPv6 CIDR addresses', () => {
-// 	assert.deepEqual(
-// 		[ipaddr.IPv6.parse('fc00::'), 64],
-// 		ipaddr.parseCIDR('fc00::/64')
-// 	);
-// 	assert.deepEqual(
-// 		[ipaddr.IPv4.parse('1.2.3.4'), 5],
-// 		ipaddr.parseCIDR('1.2.3.4/5')
-// 	);
-// })
+test("subnetMatch()", () => {
+	expect(subnetMatch(IPv4.fromBytes(1, 2, 3, 4), new Map, "foo")).toBe("foo")
+	expect(subnetMatch(IPv4.fromBytes(1, 2, 3, 4), new Map([ [ "subnet", [] ] ]), "bar")).toBe("bar")
 
-// it('does not consider a very large or very small number a valid IP address', () => {
-// 	assert.equal(ipaddr.isValid('4999999999'), false);
-// 	assert.equal(ipaddr.isValid('-1'), false);
-// })
+	expect(subnetMatch(IPv4.fromBytes(1, 2, 3, 4), new Map([ [ "subnet6", [ parseCIDR("fe80::/64") ] ] ]), "foo")).
+		toBe("foo")
 
-// it('does not hang on ::8:8:8:8:8:8:8:8:8', () => {
-// 	assert.equal(ipaddr.IPv6.isValid('::8:8:8:8:8:8:8:8:8'), false);
-// 	assert.equal(ipaddr.IPv6.isValid('::8:8:8:8:8:8:8:8:8%z'), false);
-// })
+	expect(subnetMatch(
+		IPv6.fromHextets(0xFE80, 0, 0, 0, 0, 0, 0, 1), new Map([ [ "subnet4", [ parseCIDR("1.2.3.0/24") ] ] ]),
+		"foo"
+	)).toBe("foo")
 
-// it('subnetMatch does not fail on empty range', () => {
-// 	ipaddr.subnetMatch(new ipaddr.IPv4([1, 2, 3, 4]), {}, false);
-// 	ipaddr.subnetMatch(new ipaddr.IPv4([1, 2, 3, 4]), { subnet: [] }, false);
-// })
+	const rangeList: RangeList<IPv4 | IPv6> =
+		new Map([ [ "dual64", [ parseCIDR("1.2.4.0/24"), parseCIDR("2001:1:2:3::/64") ] ] ])
 
-// it('subnetMatch returns default subnet on empty range', () => {
-// 	assert.equal(ipaddr.subnetMatch(new ipaddr.IPv4([1, 2, 3, 4]), {}, false), false);
-// 	assert.equal(ipaddr.subnetMatch(new ipaddr.IPv4([1, 2, 3, 4]), { subnet: [] }, false), false);
-// })
+	expect(subnetMatch(IPv4.fromBytes(1, 2, 4, 1), rangeList, "foo")).toBe("dual64")
+	expect(subnetMatch(IPv6.fromHextets(0x2001, 1, 2, 3, 0, 0, 0, 1), rangeList, "foo")).toBe("dual64")
+})
 
-// it('subnetMatch does not fail on IPv4 when looking for IPv6', () => {
-// 	let rangelist = { subnet6: ipaddr.parseCIDR('fe80::/64') };
-// 	assert.equal(ipaddr.subnetMatch(new ipaddr.IPv4([1, 2, 3, 4]), rangelist, false), false);
-// })
+test("fromByteArray()", () => {
+	expect(fromByteArray([ 0x7f, 0, 0, 1 ])).instanceOf(IPv4)
+	expect(fromByteArray([ 0x20, 0x01, 0xd, 0xb8, 0xf5, 0x3a, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ])).instanceOf(IPv6)
+	expect(() => fromByteArray([ 1 ])).toThrow()
+})
 
-// it('subnetMatch does not fail on IPv6 when looking for IPv4', () => {
-// 	let rangelist = { subnet4: ipaddr.parseCIDR('1.2.3.0/24') };
-// 	assert.equal(ipaddr.subnetMatch(new ipaddr.IPv6([0xfe80, 0, 0, 0, 0, 0, 0, 1]), rangelist, false), false);
-// })
+test("IPv4.prototype.prefixLengthFromSubnetMask()", () => {
+	expect(IPv4.parse("255.255.255.255").prefixLengthFromSubnetMask()).toBe(32)
+	expect(IPv4.parse("255.255.255.254").prefixLengthFromSubnetMask()).toBe(31)
+	expect(IPv4.parse("255.255.255.252").prefixLengthFromSubnetMask()).toBe(30)
+	expect(IPv4.parse("255.255.255.248").prefixLengthFromSubnetMask()).toBe(29)
+	expect(IPv4.parse("255.255.255.240").prefixLengthFromSubnetMask()).toBe(28)
+	expect(IPv4.parse("255.255.255.224").prefixLengthFromSubnetMask()).toBe(27)
+	expect(IPv4.parse("255.255.255.192").prefixLengthFromSubnetMask()).toBe(26)
+	expect(IPv4.parse("255.255.255.128").prefixLengthFromSubnetMask()).toBe(25)
+	expect(IPv4.parse("255.255.255.0").prefixLengthFromSubnetMask()).toBe(24)
+	expect(IPv4.parse("255.255.254.0").prefixLengthFromSubnetMask()).toBe(23)
+	expect(IPv4.parse("255.255.252.0").prefixLengthFromSubnetMask()).toBe(22)
+	expect(IPv4.parse("255.255.248.0").prefixLengthFromSubnetMask()).toBe(21)
+	expect(IPv4.parse("255.255.240.0").prefixLengthFromSubnetMask()).toBe(20)
+	expect(IPv4.parse("255.255.224.0").prefixLengthFromSubnetMask()).toBe(19)
+	expect(IPv4.parse("255.255.192.0").prefixLengthFromSubnetMask()).toBe(18)
+	expect(IPv4.parse("255.255.128.0").prefixLengthFromSubnetMask()).toBe(17)
+	expect(IPv4.parse("255.255.0.0").prefixLengthFromSubnetMask()).toBe(16)
+	expect(IPv4.parse("255.254.0.0").prefixLengthFromSubnetMask()).toBe(15)
+	expect(IPv4.parse("255.252.0.0").prefixLengthFromSubnetMask()).toBe(14)
+	expect(IPv4.parse("255.248.0.0").prefixLengthFromSubnetMask()).toBe(13)
+	expect(IPv4.parse("255.240.0.0").prefixLengthFromSubnetMask()).toBe(12)
+	expect(IPv4.parse("255.224.0.0").prefixLengthFromSubnetMask()).toBe(11)
+	expect(IPv4.parse("255.192.0.0").prefixLengthFromSubnetMask()).toBe(10)
+	expect(IPv4.parse("255.128.0.0").prefixLengthFromSubnetMask()).toBe(9)
+	expect(IPv4.parse("255.0.0.0").prefixLengthFromSubnetMask()).toBe(8)
+	expect(IPv4.parse("254.0.0.0").prefixLengthFromSubnetMask()).toBe(7)
+	expect(IPv4.parse("252.0.0.0").prefixLengthFromSubnetMask()).toBe(6)
+	expect(IPv4.parse("248.0.0.0").prefixLengthFromSubnetMask()).toBe(5)
+	expect(IPv4.parse("240.0.0.0").prefixLengthFromSubnetMask()).toBe(4)
+	expect(IPv4.parse("224.0.0.0").prefixLengthFromSubnetMask()).toBe(3)
+	expect(IPv4.parse("192.0.0.0").prefixLengthFromSubnetMask()).toBe(2)
+	expect(IPv4.parse("128.0.0.0").prefixLengthFromSubnetMask()).toBe(1)
+	expect(IPv4.parse("0.0.0.0").prefixLengthFromSubnetMask()).toBe(0)
+	expect(IPv4.parse("192.168.255.0").prefixLengthFromSubnetMask()).toBe(null)
+	expect(IPv4.parse("255.0.255.0").prefixLengthFromSubnetMask()).toBe(null)
+})
 
-// it('subnetMatch can use a hybrid IPv4/IPv6 range list', () => {
-// 	let rangelist = { dual64: [ipaddr.parseCIDR('1.2.4.0/24'), ipaddr.parseCIDR('2001:1:2:3::/64')] };
-// 	assert.equal(ipaddr.subnetMatch(new ipaddr.IPv4([1, 2, 4, 1]), rangelist, false), 'dual64');
-// 	assert.equal(ipaddr.subnetMatch(new ipaddr.IPv6([0x2001, 1, 2, 3, 0, 0, 0, 1]), rangelist, false), 'dual64');
-// })
+test("IPv6.prototype.prefixLengthFromSubnetMask()", () => {
+	expect(IPv6.parse("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").prefixLengthFromSubnetMask()).toBe(128)
+	expect(IPv6.parse("ffff:ffff:ffff:ffff::").prefixLengthFromSubnetMask()).toBe(64)
+	expect(IPv6.parse("ffff:ffff:ffff:ff80::").prefixLengthFromSubnetMask()).toBe(57)
+	expect(IPv6.parse("ffff:ffff:ffff::").prefixLengthFromSubnetMask()).toBe(48)
+	expect(IPv6.parse("ffff:ffff:ffff::%z").prefixLengthFromSubnetMask()).toBe(48)
+	expect(IPv6.parse("::").prefixLengthFromSubnetMask()).toBe(0)
+	expect(IPv6.parse("::%z").prefixLengthFromSubnetMask()).toBe(0)
+	expect(IPv6.parse("2001:db8::").prefixLengthFromSubnetMask()).toBe(null)
+	expect(IPv6.parse("ffff:0:0:ffff::").prefixLengthFromSubnetMask()).toBe(null)
+	expect(IPv6.parse("ffff:0:0:ffff::%z").prefixLengthFromSubnetMask()).toBe(null)
+})
 
-// it('is able to determine IP address type from byte array input', () => {
-// 	assert.equal(ipaddr.fromByteArray([0x7f, 0, 0, 1]).kind(), 'ipv4');
-// 	assert.equal(ipaddr.fromByteArray([0x20, 0x01, 0xd, 0xb8, 0xf5, 0x3a, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]).kind(), 'ipv6');
-// 	assert.throws(() => {
-// 		ipaddr.fromByteArray([1]);
-// 	});
-// })
+test("IPv4.subnetMaskFromPrefixLength()", () => {
+	expect(IPv4.subnetMaskFromPrefixLength(0)).toEqual(IPv4.parse("0.0.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(1)).toEqual(IPv4.parse("128.0.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(2)).toEqual(IPv4.parse("192.0.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(3)).toEqual(IPv4.parse("224.0.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(4)).toEqual(IPv4.parse("240.0.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(5)).toEqual(IPv4.parse("248.0.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(6)).toEqual(IPv4.parse("252.0.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(7)).toEqual(IPv4.parse("254.0.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(8)).toEqual(IPv4.parse("255.0.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(9)).toEqual(IPv4.parse("255.128.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(10)).toEqual(IPv4.parse("255.192.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(11)).toEqual(IPv4.parse("255.224.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(12)).toEqual(IPv4.parse("255.240.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(13)).toEqual(IPv4.parse("255.248.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(14)).toEqual(IPv4.parse("255.252.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(15)).toEqual(IPv4.parse("255.254.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(16)).toEqual(IPv4.parse("255.255.0.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(17)).toEqual(IPv4.parse("255.255.128.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(18)).toEqual(IPv4.parse("255.255.192.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(19)).toEqual(IPv4.parse("255.255.224.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(20)).toEqual(IPv4.parse("255.255.240.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(21)).toEqual(IPv4.parse("255.255.248.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(22)).toEqual(IPv4.parse("255.255.252.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(23)).toEqual(IPv4.parse("255.255.254.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(24)).toEqual(IPv4.parse("255.255.255.0"))
+	expect(IPv4.subnetMaskFromPrefixLength(25)).toEqual(IPv4.parse("255.255.255.128"))
+	expect(IPv4.subnetMaskFromPrefixLength(26)).toEqual(IPv4.parse("255.255.255.192"))
+	expect(IPv4.subnetMaskFromPrefixLength(27)).toEqual(IPv4.parse("255.255.255.224"))
+	expect(IPv4.subnetMaskFromPrefixLength(28)).toEqual(IPv4.parse("255.255.255.240"))
+	expect(IPv4.subnetMaskFromPrefixLength(29)).toEqual(IPv4.parse("255.255.255.248"))
+	expect(IPv4.subnetMaskFromPrefixLength(30)).toEqual(IPv4.parse("255.255.255.252"))
+	expect(IPv4.subnetMaskFromPrefixLength(31)).toEqual(IPv4.parse("255.255.255.254"))
+	expect(IPv4.subnetMaskFromPrefixLength(32)).toEqual(IPv4.parse("255.255.255.255"))
+})
 
-// it('prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv4 masks', () => {
-// 	assert.equal(ipaddr.IPv4.parse('255.255.255.255').prefixLengthFromSubnetMask(), 32);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.255.254').prefixLengthFromSubnetMask(), 31);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.255.252').prefixLengthFromSubnetMask(), 30);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.255.248').prefixLengthFromSubnetMask(), 29);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.255.240').prefixLengthFromSubnetMask(), 28);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.255.224').prefixLengthFromSubnetMask(), 27);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.255.192').prefixLengthFromSubnetMask(), 26);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.255.128').prefixLengthFromSubnetMask(), 25);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.255.0').prefixLengthFromSubnetMask(), 24);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.254.0').prefixLengthFromSubnetMask(), 23);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.252.0').prefixLengthFromSubnetMask(), 22);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.248.0').prefixLengthFromSubnetMask(), 21);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.240.0').prefixLengthFromSubnetMask(), 20);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.224.0').prefixLengthFromSubnetMask(), 19);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.192.0').prefixLengthFromSubnetMask(), 18);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.128.0').prefixLengthFromSubnetMask(), 17);
-// 	assert.equal(ipaddr.IPv4.parse('255.255.0.0').prefixLengthFromSubnetMask(), 16);
-// 	assert.equal(ipaddr.IPv4.parse('255.254.0.0').prefixLengthFromSubnetMask(), 15);
-// 	assert.equal(ipaddr.IPv4.parse('255.252.0.0').prefixLengthFromSubnetMask(), 14);
-// 	assert.equal(ipaddr.IPv4.parse('255.248.0.0').prefixLengthFromSubnetMask(), 13);
-// 	assert.equal(ipaddr.IPv4.parse('255.240.0.0').prefixLengthFromSubnetMask(), 12);
-// 	assert.equal(ipaddr.IPv4.parse('255.224.0.0').prefixLengthFromSubnetMask(), 11);
-// 	assert.equal(ipaddr.IPv4.parse('255.192.0.0').prefixLengthFromSubnetMask(), 10);
-// 	assert.equal(ipaddr.IPv4.parse('255.128.0.0').prefixLengthFromSubnetMask(), 9);
-// 	assert.equal(ipaddr.IPv4.parse('255.0.0.0').prefixLengthFromSubnetMask(), 8);
-// 	assert.equal(ipaddr.IPv4.parse('254.0.0.0').prefixLengthFromSubnetMask(), 7);
-// 	assert.equal(ipaddr.IPv4.parse('252.0.0.0').prefixLengthFromSubnetMask(), 6);
-// 	assert.equal(ipaddr.IPv4.parse('248.0.0.0').prefixLengthFromSubnetMask(), 5);
-// 	assert.equal(ipaddr.IPv4.parse('240.0.0.0').prefixLengthFromSubnetMask(), 4);
-// 	assert.equal(ipaddr.IPv4.parse('224.0.0.0').prefixLengthFromSubnetMask(), 3);
-// 	assert.equal(ipaddr.IPv4.parse('192.0.0.0').prefixLengthFromSubnetMask(), 2);
-// 	assert.equal(ipaddr.IPv4.parse('128.0.0.0').prefixLengthFromSubnetMask(), 1);
-// 	assert.equal(ipaddr.IPv4.parse('0.0.0.0').prefixLengthFromSubnetMask(), 0);
-// 	// negative cases
-// 	assert.equal(ipaddr.IPv4.parse('192.168.255.0').prefixLengthFromSubnetMask(), null);
-// 	assert.equal(ipaddr.IPv4.parse('255.0.255.0').prefixLengthFromSubnetMask(), null);
-// })
+test("IPv6.subnetMaskFromPrefixLength()", () => {
+	expect(IPv6.subnetMaskFromPrefixLength(128)).toEqual(IPv6.parse("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))
+	expect(IPv6.subnetMaskFromPrefixLength(112)).toEqual(IPv6.parse("ffff:ffff:ffff:ffff:ffff:ffff:ffff:0"))
+	expect(IPv6.subnetMaskFromPrefixLength(96)).toEqual(IPv6.parse("ffff:ffff:ffff:ffff:ffff:ffff::"))
+	expect(IPv6.subnetMaskFromPrefixLength(72)).toEqual(IPv6.parse("ffff:ffff:ffff:ffff:ff00::"))
+	expect(IPv6.subnetMaskFromPrefixLength(64)).toEqual(IPv6.parse("ffff:ffff:ffff:ffff::"))
+	expect(IPv6.subnetMaskFromPrefixLength(48)).toEqual(IPv6.parse("ffff:ffff:ffff::"))
+	expect(IPv6.subnetMaskFromPrefixLength(32)).toEqual(IPv6.parse("ffff:ffff::"))
+	expect(IPv6.subnetMaskFromPrefixLength(16)).toEqual(IPv6.parse("ffff::"))
+	expect(IPv6.subnetMaskFromPrefixLength(8)).toEqual(IPv6.parse("ff00::"))
+	expect(IPv6.subnetMaskFromPrefixLength(4)).toEqual(IPv6.parse("f000::"))
+	expect(IPv6.subnetMaskFromPrefixLength(2)).toEqual(IPv6.parse("c000::"))
+	expect(IPv6.subnetMaskFromPrefixLength(1)).toEqual(IPv6.parse("8000::"))
+	expect(IPv6.subnetMaskFromPrefixLength(0)).toEqual(IPv6.parse("::"))
+})
 
-// it('prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv6 masks', () => {
-// 	assert.equal(ipaddr.IPv6.parse('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff').prefixLengthFromSubnetMask(), 128);
-// 	assert.equal(ipaddr.IPv6.parse('ffff:ffff:ffff:ffff::').prefixLengthFromSubnetMask(), 64);
-// 	assert.equal(ipaddr.IPv6.parse('ffff:ffff:ffff:ff80::').prefixLengthFromSubnetMask(), 57);
-// 	assert.equal(ipaddr.IPv6.parse('ffff:ffff:ffff::').prefixLengthFromSubnetMask(), 48);
-// 	assert.equal(ipaddr.IPv6.parse('ffff:ffff:ffff::%z').prefixLengthFromSubnetMask(), 48);
-// 	assert.equal(ipaddr.IPv6.parse('::').prefixLengthFromSubnetMask(), 0);
-// 	assert.equal(ipaddr.IPv6.parse('::%z').prefixLengthFromSubnetMask(), 0);
-// 	// negative cases
-// 	assert.equal(ipaddr.IPv6.parse('2001:db8::').prefixLengthFromSubnetMask(), null);
-// 	assert.equal(ipaddr.IPv6.parse('ffff:0:0:ffff::').prefixLengthFromSubnetMask(), null);
-// 	assert.equal(ipaddr.IPv6.parse('ffff:0:0:ffff::%z').prefixLengthFromSubnetMask(), null);
-// })
+test("IPv4.broadcastAddressFromCIDR()", () => {
+	expect(IPv4.broadcastAddressFromCIDR("172.0.0.1/24")).toEqual(IPv4.parse("172.0.0.255"))
+	expect(IPv4.broadcastAddressFromCIDR("172.0.0.1/26")).toEqual(IPv4.parse("172.0.0.63"))
+	expect(IPv4.networkAddressFromCIDR("172.0.0.1/24")).toEqual(IPv4.parse("172.0.0.0"))
+	expect(IPv4.networkAddressFromCIDR("172.0.0.1/5")).toEqual(IPv4.parse("168.0.0.0"))
+})
 
-// it('subnetMaskFromPrefixLength returns correct IPv4 subnet mask given prefix length', () => {
+test("IPv6.networkAddressFromCIDR()", () => {
+	expect(IPv6.networkAddressFromCIDR("::/0")).toEqual(IPv6.parse("::"))
+	expect(IPv6.networkAddressFromCIDR("2001:db8:f53a::1:1/64")).toEqual(IPv6.parse("2001:db8:f53a::"))
+	expect(IPv6.networkAddressFromCIDR("2001:db8:f53b::1:1/48")).toEqual(IPv6.parse("2001:db8:f53b::"))
+	expect(IPv6.networkAddressFromCIDR("2001:db8:f531::1:1/44")).toEqual(IPv6.parse("2001:db8:f530::"))
+	expect(IPv6.networkAddressFromCIDR("2001:db8:f500::1/40")).toEqual(IPv6.parse("2001:db8:f500::"))
+	expect(IPv6.networkAddressFromCIDR("2001:db8:f500::1%z/40")).toEqual(IPv6.parse("2001:db8:f500::"))
+	expect(IPv6.networkAddressFromCIDR("2001:db9:f500::1/40")).toEqual(IPv6.parse("2001:db9:f500::"))
+	expect(IPv6.networkAddressFromCIDR("2001:db9:f500::1%z/40")).toEqual(IPv6.parse("2001:db9:f500::"))
+	expect(IPv6.networkAddressFromCIDR("2001:db8:f53a::1/128")).toEqual(IPv6.parse("2001:db8:f53a::1"))
+})
 
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(0), '0.0.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(1), '128.0.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(2), '192.0.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(3), '224.0.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(4), '240.0.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(5), '248.0.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(6), '252.0.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(7), '254.0.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(8), '255.0.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(9), '255.128.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(10), '255.192.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(11), '255.224.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(12), '255.240.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(13), '255.248.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(14), '255.252.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(15), '255.254.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(16), '255.255.0.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(17), '255.255.128.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(18), '255.255.192.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(19), '255.255.224.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(20), '255.255.240.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(21), '255.255.248.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(22), '255.255.252.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(23), '255.255.254.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(24), '255.255.255.0');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(25), '255.255.255.128');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(26), '255.255.255.192');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(27), '255.255.255.224');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(28), '255.255.255.240');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(29), '255.255.255.248');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(30), '255.255.255.252');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(31), '255.255.255.254');
-// 	assert.equal(ipaddr.IPv4.subnetMaskFromPrefixLength(32), '255.255.255.255');
-// })
-
-// it('subnetMaskFromPrefixLength returns correct IPv6 subnet mask given prefix length', () => {
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(128), 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(112), 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:0');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(96),  'ffff:ffff:ffff:ffff:ffff:ffff::');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(72),  'ffff:ffff:ffff:ffff:ff00::');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(64),  'ffff:ffff:ffff:ffff::');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(48),  'ffff:ffff:ffff::');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(32),  'ffff:ffff::');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(16),  'ffff::');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(8),   'ff00::');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(4),   'f000::');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(2),   'c000::');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(1),   '8000::');
-// 	assert.equal(ipaddr.IPv6.subnetMaskFromPrefixLength(0),   '::');
-// })
-
-// it('broadcastAddressFromCIDR returns correct IPv4 broadcast address', () => {
-// 	assert.equal(ipaddr.IPv4.broadcastAddressFromCIDR('172.0.0.1/24'), '172.0.0.255');
-// 	assert.equal(ipaddr.IPv4.broadcastAddressFromCIDR('172.0.0.1/26'), '172.0.0.63');
-// })
-
-// it('networkAddressFromCIDR returns correct IPv4 network address', () => {
-// 	assert.equal(ipaddr.IPv4.networkAddressFromCIDR('172.0.0.1/24'), '172.0.0.0');
-// 	assert.equal(ipaddr.IPv4.networkAddressFromCIDR('172.0.0.1/5'), '168.0.0.0');
-// })
-
-// it('networkAddressFromCIDR returns correct IPv6 network address', () => {
-// 	assert.equal(ipaddr.IPv6.networkAddressFromCIDR('::/0'),                  '::');
-// 	assert.equal(ipaddr.IPv6.networkAddressFromCIDR('2001:db8:f53a::1:1/64'), '2001:db8:f53a::');
-// 	assert.equal(ipaddr.IPv6.networkAddressFromCIDR('2001:db8:f53b::1:1/48'), '2001:db8:f53b::');
-// 	assert.equal(ipaddr.IPv6.networkAddressFromCIDR('2001:db8:f531::1:1/44'), '2001:db8:f530::');
-// 	assert.equal(ipaddr.IPv6.networkAddressFromCIDR('2001:db8:f500::1/40'),   '2001:db8:f500::');
-// 	assert.equal(ipaddr.IPv6.networkAddressFromCIDR('2001:db8:f500::1%z/40'), '2001:db8:f500::');
-// 	assert.equal(ipaddr.IPv6.networkAddressFromCIDR('2001:db9:f500::1/40'),   '2001:db9:f500::');
-// 	assert.equal(ipaddr.IPv6.networkAddressFromCIDR('2001:db9:f500::1%z/40'), '2001:db9:f500::');
-// 	assert.equal(ipaddr.IPv6.networkAddressFromCIDR('2001:db8:f53a::1/128'),  '2001:db8:f53a::1');
-// })
-
-// it('broadcastAddressFromCIDR returns correct IPv6 broadcast address', () => {
-// 	assert.equal(ipaddr.IPv6.broadcastAddressFromCIDR('::/0'),                  'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff');
-// 	assert.equal(ipaddr.IPv6.broadcastAddressFromCIDR('2001:db8:f53a::1:1/64'), '2001:db8:f53a:0:ffff:ffff:ffff:ffff');
-// 	assert.equal(ipaddr.IPv6.broadcastAddressFromCIDR('2001:db8:f53b::1:1/48'), '2001:db8:f53b:ffff:ffff:ffff:ffff:ffff');
-// 	assert.equal(ipaddr.IPv6.broadcastAddressFromCIDR('2001:db8:f531::1:1/44'), '2001:db8:f53f:ffff:ffff:ffff:ffff:ffff');
-// 	assert.equal(ipaddr.IPv6.broadcastAddressFromCIDR('2001:db8:f500::1/40'),   '2001:db8:f5ff:ffff:ffff:ffff:ffff:ffff');
-// 	assert.equal(ipaddr.IPv6.broadcastAddressFromCIDR('2001:db8:f500::1%z/40'), '2001:db8:f5ff:ffff:ffff:ffff:ffff:ffff');
-// 	assert.equal(ipaddr.IPv6.broadcastAddressFromCIDR('2001:db9:f500::1/40'),   '2001:db9:f5ff:ffff:ffff:ffff:ffff:ffff');
-// 	assert.equal(ipaddr.IPv6.broadcastAddressFromCIDR('2001:db9:f500::1%z/40'), '2001:db9:f5ff:ffff:ffff:ffff:ffff:ffff');
-// 	assert.equal(ipaddr.IPv6.broadcastAddressFromCIDR('2001:db8:f53a::1/128'),  '2001:db8:f53a::1');
-// })
+test("IPv6.broadcastAddressFromCIDR()", () => {
+	expect(IPv6.broadcastAddressFromCIDR("::/0")).toEqual(IPv6.parse("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))
+	expect(IPv6.broadcastAddressFromCIDR("2001:db8:f53a::1:1/64")).toEqual(IPv6.parse("2001:db8:f53a:0:ffff:ffff:ffff:ffff"))
+	expect(IPv6.broadcastAddressFromCIDR("2001:db8:f53b::1:1/48")).toEqual(IPv6.parse("2001:db8:f53b:ffff:ffff:ffff:ffff:ffff"))
+	expect(IPv6.broadcastAddressFromCIDR("2001:db8:f531::1:1/44")).toEqual(IPv6.parse("2001:db8:f53f:ffff:ffff:ffff:ffff:ffff"))
+	expect(IPv6.broadcastAddressFromCIDR("2001:db8:f500::1/40")).toEqual(IPv6.parse("2001:db8:f5ff:ffff:ffff:ffff:ffff:ffff"))
+	expect(IPv6.broadcastAddressFromCIDR("2001:db8:f500::1%z/40")).toEqual(IPv6.parse("2001:db8:f5ff:ffff:ffff:ffff:ffff:ffff"))
+	expect(IPv6.broadcastAddressFromCIDR("2001:db9:f500::1/40")).toEqual(IPv6.parse("2001:db9:f5ff:ffff:ffff:ffff:ffff:ffff"))
+	expect(IPv6.broadcastAddressFromCIDR("2001:db9:f500::1%z/40")).toEqual(IPv6.parse("2001:db9:f5ff:ffff:ffff:ffff:ffff:ffff"))
+	expect(IPv6.broadcastAddressFromCIDR("2001:db8:f53a::1/128")).toEqual(IPv6.parse("2001:db8:f53a::1"))
+})

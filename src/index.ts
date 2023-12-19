@@ -1,10 +1,16 @@
 export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved"
 export type IPv4Range = IPvXRangeDefaults | "broadcast" | "carrierGradeNat" | "private"
+export type IPv6Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo"
 
-export type IPv6Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo" |
-	"benchmarking" | "amt" | "as112v6" | "deprecated" | "orchid2"
+class CIDR<IP extends IPv4 | IPv6> {
+	constructor(public ip: IP, public bits: number) {}
 
-export type RangeList<T extends IPv4 | IPv6> = Map<T extends IPv4 ? IPv4Range : IPv6Range, { ip: T, bits: number }[]>
+	toString() {
+		return `${this.ip}/${this.bits}`
+	}
+}
+
+export type RangeList<T extends IPv4 | IPv6> = Map<(T extends IPv4 ? IPv4Range : IPv6Range) | (string & {}), CIDR<T>[]>
 
 // A list of regular expressions that match arbitrary IPv4 addresses,
 // for which a number of weird notations exist.
@@ -51,10 +57,10 @@ function expandIPv6(string: string, parts: number): { parts: number[], zoneId: s
 	let /** How many parts do we already have? */ colonCount = string.match(/:/g)?.length ?? 0
 
 	// 0::0 is two parts more than ::
-	if (string.slice(0, 2) === "::")
+	if (string.slice(0, 2) == "::")
 		colonCount--
 
-	if (string.slice(-2) === "::")
+	if (string.slice(-2) == "::")
 		colonCount--
 
 	// The following loop would hang if colonCount > parts
@@ -66,24 +72,24 @@ function expandIPv6(string: string, parts: number): { parts: number[], zoneId: s
 
 	// Trim any garbage which may be hanging around if :: was at the edge in
 	// the source strin
-	if (string[0] === ":")
+	if (string[0] == ":")
 		string = string.slice(1)
 
-	if (string[string.length - 1] === ":")
+	if (string[string.length - 1] == ":")
 		string = string.slice(0, -1)
 
 	return { parts: string.split(":").map(hex => parseInt(hex, 16)), zoneId }
 }
 
 /** A generic CIDR (Classless Inter-Domain Routing) RFC1518 range matcher. */
-function matchCIDR (first: { [index: number]: number, length: number }, second: { [index: number]: number, length: number }, partSize: number, cidrBits: number) {
+function matchCIDR(first: { [index: number]: number, length: number }, second: { [index: number]: number, length: number }, partSize: number, cidrBits: number) {
 	if (first.length != second.length)
-		throw Error("ipaddr: cannot match CIDR for objects with different lengths")
+		throw Error("Cannot match CIDR for objects with different lengths")
 
 	for (let part = 0; cidrBits > 0; part += 1) {
 		const shift = Math.max(partSize - cidrBits, 0)
 
-		if (first[part]! >> shift !== second[part]! >> shift)
+		if (first[part]! >> shift != second[part]! >> shift)
 			return false
 
 		cidrBits -= partSize
@@ -92,7 +98,7 @@ function matchCIDR (first: { [index: number]: number, length: number }, second: 
 	return true
 }
 
-function parseIntAuto (string: string) {
+function parseIntAuto(string: string) {
 	// Hexadedimal base 16 (0x#)
 	if (hexRegex.test(string))
 		return parseInt(string, 16)
@@ -104,19 +110,11 @@ function parseIntAuto (string: string) {
 		if (octalRegex.test(string))
 			return parseInt(string, 8)
 
-		throw Error(`ipaddr: cannot parse ${JSON.stringify(string)} as octal`)
+		throw Error(`Cannot parse ${JSON.stringify(string)} as octal`)
 	}
 
 	// Always include the base 10 radix!
 	return parseInt(string, 10)
-}
-
-// TODO only used once, inline
-function padPart (part: string, length: number) {
-	while (part.length < length)
-		part = `0${part}`
-
-	return part
 }
 
 export class IPv4 {
@@ -168,6 +166,10 @@ export class IPv4 {
 		return matchCIDR(this.octets, what.octets, 8, bits)
 	}
 
+	matchCIDR(cidr: CIDR<IPv4>): boolean {
+		return this.match(cidr.ip, cidr.bits)
+	}
+
 	/** returns a number of leading ones in IPv4 address, making sure that
 	  * the rest is a solid sequence of 0's (valid netmask)
 	  * returns either the CIDR length or null if mask is not valid */
@@ -187,26 +189,23 @@ export class IPv4 {
 		let /** non-zero encountered stop scanning for zeroes */ stop = false
 		let cidr = 0
 
-		for (const octet of this.octets) {
-			const zeros = zerotable[octet]
+		for (let i = 4; i--;) {
+			const zeros = zerotable[this.octets[i]!]
 
-			if (zeros != undefined) {
-				if (stop && zeros != 0)
-					return null
-
-				if (zeros != 8)
-					stop = true
-
-				cidr += zeros
-			} else
+			if (zeros == undefined || (stop && zeros != 0))
 				return null
+
+			if (zeros != 8)
+				stop = true
+
+			cidr += zeros
 		}
 
 		return 32 - cidr
 	}
 
 	/** Checks if the address corresponds to one of the special ranges. */
-	range(): IPv4Range {
+	range(): IPv4Range | (string & {}) {
 		return subnetMatch(this, IPv4.SpecialRanges)
 	}
 
@@ -227,15 +226,15 @@ export class IPv4 {
 
 	/** @returns The address in convenient, decimal-dotted format. */
 	toString(): string {
-		return this.octets.join('.')
+		return this.octets.join(".")
 	}
 
 	/** A utility function to return broadcast address given the IPv4 interface and prefix length in CIDR notation */
 	static broadcastAddressFromCIDR(addr: string): IPv4 {
 		try {
 			const cidr = this.parseCIDR(addr)
-			const ipInterfaceOctets = cidr[0].toByteArray()
-			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray()
+			const ipInterfaceOctets = cidr.ip.toByteArray()
+			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits).toByteArray()
 
 			return this.fromBytes(
 				ipInterfaceOctets[0]! | (subnetMaskOctets[0]! ^ 255),
@@ -243,8 +242,8 @@ export class IPv4 {
 				ipInterfaceOctets[2]! | (subnetMaskOctets[2]! ^ 255),
 				ipInterfaceOctets[3]! | (subnetMaskOctets[3]! ^ 255)
 			)
-		} catch (e) {
-			throw Error('ipaddr: the address does not have IPv4 CIDR format')
+		} catch {
+			throw Error("The address does not have IPv4 CIDR format")
 		}
 	}
 
@@ -284,8 +283,8 @@ export class IPv4 {
 	static networkAddressFromCIDR(addr: string): IPv4 {
 		try {
 			const cidr = this.parseCIDR(addr)
-			const ipInterfaceOctets = cidr[0].toByteArray()
-			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray()
+			const ipInterfaceOctets = cidr.ip.toByteArray()
+			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits).toByteArray()
 
 			return this.fromBytes(
 				ipInterfaceOctets[0]! & subnetMaskOctets[0]!,
@@ -294,7 +293,7 @@ export class IPv4 {
 				ipInterfaceOctets[3]! & subnetMaskOctets[3]!
 			)
 		} catch {
-			throw Error("ipaddr: the address does not have IPv4 CIDR format")
+			throw Error("The address does not have IPv4 CIDR format")
 		}
 	}
 
@@ -310,22 +309,17 @@ export class IPv4 {
 	}
 
 	/** Parses the string as an IPv4 Address with CIDR Notation. */
-	static parseCIDR(addr: string): [ IPv4, number ] {
-		const match = addr.match(/^(.+)\/(\d+)$/)
+	static parseCIDR(address: string): CIDR<IPv4> {
+		const match = address.match(/^(.+)\/(\d+)$/)
 
 		if (match) {
 			const maskLength = Number(match[2])
 
-			if (match[1] && maskLength >= 0 && maskLength <= 32) {
-				return Object.defineProperty([ this.parse(match[1]), maskLength ], "toString", {
-					value() {
-						return this.join("/")
-					}
-				})
-			}
+			if (match[1] && maskLength >= 0 && maskLength <= 32)
+				return new CIDR(this.parse(match[1]), maskLength)
 		}
 
-		throw Error("ipaddr: string is not formatted like an IPv4 CIDR range")
+		throw Error("String is not formatted like an IPv4 CIDR range")
 	}
 
 	/** Classful variants (like a.b, where a is an octet, and b is a 24-bit
@@ -383,22 +377,18 @@ export class IPv4 {
 	/** A utility function to return subnet mask in IPv4 format given the prefix length */
 	static subnetMaskFromPrefixLength(prefix: number): IPv4 {
 		if (prefix < 0 || prefix > 32)
-			throw Error("ipaddr: invalid IPv4 prefix length")
+			throw Error("Invalid IPv4 prefix length")
 
 		const octets: [ number, number, number, number ] = [ 0, 0, 0, 0 ]
-		let j = 0;
-		const filledOctetCount = Math.floor(prefix / 8);
+		const filledOctetCount = Math.floor(prefix / 8)
 
-		while (j < filledOctetCount) {
-			octets[j] = 255;
-			j++;
-		}
+		for (let i = filledOctetCount; i--;)
+			octets[i] = 255
 
-		if (filledOctetCount < 4) {
-			octets[filledOctetCount] = Math.pow(2, prefix % 8) - 1 << 8 - (prefix % 8);
-		}
+		if (filledOctetCount < 4)
+			octets[filledOctetCount] = (2 ** (prefix % 8)) - 1 << 8 - (prefix % 8)
 
-		return this.fromBytes(...octets);
+		return this.fromBytes(...octets)
 	}
 }
 
@@ -457,12 +447,16 @@ export class IPv6 {
 
 	/** Checks if this address is an IPv4-mapped IPv6 address. */
 	isIPv4MappedAddress(): boolean {
-		return this.range() === 'ipv4Mapped';
+		return this.range() == "ipv4Mapped"
 	}
 
 	/** Checks if this address matches other one within given CIDR range. */
 	match(what: IPv6, bits: number): boolean {
-		return matchCIDR(this.hextets, what.hextets, 16, bits);
+		return matchCIDR(this.hextets, what.hextets, 16, bits)
+	}
+
+	matchCIDR(cidr: CIDR<IPv6>) {
+		return this.match(cidr.ip, cidr.bits)
 	}
 
 	/** returns a number of leading ones in IPv6 address, making sure that
@@ -492,26 +486,23 @@ export class IPv6 {
 		let /** non-zero encountered stop scanning for zeroes */ stop = false
 		let cidr = 0
 
-		for (const part in this.hextets) {
-			const zeros = zerotable[part]
+		for (let i = 8; i--;) {
+			const zeros = zerotable[this.hextets[i]!]
 
-			if (zeros != undefined) {
-				if (stop && zeros !== 0)
-					return null
-
-				if (zeros !== 16)
-					stop = true
-
-				cidr += zeros
-			} else
+			if (zeros == undefined || (stop && zeros != 0))
 				return null
+
+			if (zeros != 16)
+				stop = true
+
+			cidr += zeros
 		}
 
 		return 128 - cidr
 	}
 
 	/** Checks if the address corresponds to one of the special ranges. */
-	range(): IPv6Range {
+	range(): IPv6Range | (string & {}) {
 		return subnetMatch(this, IPv6.SpecialRanges)
 	}
 
@@ -528,36 +519,19 @@ export class IPv6 {
 	/** Returns the address in expanded format with all zeroes included, like
 	  * `2001:0db8:0008:0066:0000:0000:0000:0001`. */
 	toFixedLengthString(): string {
-		let addr
-		const results = []
-
-		for (const part of this.hextets)
-			results.push(padPart(part.toString(16), 4))
-
-		addr = results.join(':')
-
-		let suffix = '';
-
-		if (this.zoneId)
-			suffix = `%${this.zoneId}`
-
-		return addr + suffix
+		return [ ...this.hextets ].map(part => part.toString(16).padStart(4, "0")).join(":") +
+			(this.zoneId ? `%${this.zoneId}` : "")
 	}
 
 	/** Converts this address to IPv4 address if it is an IPv4-mapped IPv6 address.
 	  * Throws an error otherwise. */
 	toIPv4Address(): IPv4 {
 		if (!this.isIPv4MappedAddress())
-			throw Error('ipaddr: trying to convert a generic ipv6 address to ipv4')
+			throw Error("Trying to convert a generic ipv6 address to ipv4")
 
 		const u8View = new Uint8Array(this.hextets.buffer)
 
-		return IPv4.fromBytes(
-			u8View[13]!,
-			u8View[12]!,
-			u8View[15]!,
-			u8View[14]!
-		)
+		return IPv4.fromBytes(u8View[13]!, u8View[12]!, u8View[15]!, u8View[14]!)
 	}
 
 	/** @returns The address in expanded format with all zeroes included, like `2001:db8:8:66:0:0:0:1`.
@@ -600,8 +574,8 @@ export class IPv6 {
 	static broadcastAddressFromCIDR(addr: string): IPv6 {
 		try {
 			const cidr = this.parseCIDR(addr);
-			const ipInterfaceOctets = cidr[0].toByteArray();
-			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray();
+			const ipInterfaceOctets = cidr.ip.toByteArray();
+			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits).toByteArray();
 
 			return this.fromBytes(
 				ipInterfaceOctets[0]! | (subnetMaskOctets[0]! ^ 255),
@@ -622,7 +596,7 @@ export class IPv6 {
 				ipInterfaceOctets[15]! | (subnetMaskOctets[15]! ^ 255),
 			)
 		} catch (e) {
-			throw Error(`ipaddr: the address does not have IPv6 CIDR format (${e})`);
+			throw Error(`The address does not have IPv6 CIDR format (${e})`);
 		}
 	}
 
@@ -661,8 +635,8 @@ export class IPv6 {
 	static networkAddressFromCIDR(addr: string): IPv6 {
 		try {
 			const cidr = this.parseCIDR(addr)
-			const ipInterfaceOctets = cidr[0].toByteArray()
-			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray()
+			const ipInterfaceOctets = cidr.ip.toByteArray()
+			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits).toByteArray()
 
 			// Network address is bitwise AND between ip interface and mask
 			return this.fromBytes(
@@ -684,7 +658,7 @@ export class IPv6 {
 				ipInterfaceOctets[15]! & subnetMaskOctets[15]!
 			)
 		} catch (e) {
-			throw Error(`ipaddr: the address does not have IPv6 CIDR format`, { cause: e });
+			throw Error(`The address does not have IPv6 CIDR format`, { cause: e });
 		}
 	}
 
@@ -694,27 +668,22 @@ export class IPv6 {
 		const parsedAddress = this.parser(addr)
 
 		if (parsedAddress === null)
-			throw Error("ipaddr: string is not formatted like an IPv6 Address")
+			throw Error("String is not formatted like an IPv6 Address")
 
 		return new this(new Uint16Array(parsedAddress.parts), parsedAddress.zoneId)
 	}
 
-	static parseCIDR(addr: string): [ IPv6, number ] {
+	static parseCIDR(addr: string): CIDR<IPv6> {
 		const match = addr.match(/^(.+)\/(\d+)$/)
 
 		if (match) {
 			const maskLength = parseInt(match[2]!)
 
-			if (maskLength >= 0 && maskLength <= 128) {
-				return Object.defineProperty([ this.parse(match[1]!), maskLength ], "toString", {
-					value() {
-						return this.join("/")
-					}
-				})
-			}
+			if (maskLength >= 0 && maskLength <= 128)
+				return new CIDR(this.parse(match[1]!), maskLength)
 		}
 
-		throw Error("ipaddr: string is not formatted like an IPv6 CIDR range")
+		throw Error("String is not formatted like an IPv6 CIDR range")
 	}
 
 	/** Parse an IPv6 address. */
@@ -728,25 +697,20 @@ export class IPv6 {
 			return expandIPv6(string, 8)
 
 		if ((match = string.match(ipv6Regexes.transitional))) {
-			const addr = expandIPv6(match[1]!.slice(0, -1) + (match[6] || ''), 6)!
+			const address = expandIPv6(match[1]!.slice(0, -1) + (match[6] || ''), 6)!
 
-			if (addr.parts) {
-				const octets = [
-					parseInt(match[2]!),
-					parseInt(match[3]!),
-					parseInt(match[4]!),
-					parseInt(match[5]!)
-				]
+			if (address.parts) {
+				const octets = [ parseInt(match[2]!), parseInt(match[3]!), parseInt(match[4]!), parseInt(match[5]!) ]
 
 				for (const octet of octets) {
 					if (octet < 0 || octet > 255)
 						return null
 				}
 
-				addr.parts.push((octets[0]! << 8) | octets[1]!)
-				addr.parts.push((octets[2]! << 8) | octets[3]!)
+				address.parts.push((octets[0]! << 8) | octets[1]!)
+				address.parts.push((octets[2]! << 8) | octets[3]!)
 
-				return { parts: addr.parts, zoneId: addr.zoneId }
+				return { parts: address.parts, zoneId: address.zoneId }
 			}
 		}
 
@@ -756,7 +720,7 @@ export class IPv6 {
 	/** A utility function to return subnet mask in IPv6 format given the prefix length */
 	static subnetMaskFromPrefixLength(prefix: number): IPv6 {
 		if (prefix < 0 || prefix > 128)
-			throw Error("ipaddr: invalid IPv6 prefix length")
+			throw Error("Invalid IPv6 prefix length")
 
 		const subnetMask = this.fromHextets(0, 0, 0, 0, 0, 0, 0, 0)
 		const filledHextetCount = Math.floor(prefix / 16)
@@ -773,10 +737,10 @@ export class IPv6 {
 
 /** Try to parse an array in network order (MSB first) for IPv4 and IPv6. */
 export function fromByteArray(bytes: number[]): IPv4 | IPv6 {
-	if (bytes.length === 4)
+	if (bytes.length == 4)
 		return IPv4.fromBytes(...bytes as [ number, number, number, number ])
 
-	if (bytes.length === 16)
+	if (bytes.length == 16)
 		return IPv6.fromBytes(...bytes as [ number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number ])
 
 	throw Error("The binary input is neither an IPv6 nor IPv4 address")
@@ -801,7 +765,7 @@ export function parse(address: string): IPv4 | IPv6 {
 
 /** Attempt to parse CIDR notation, first through IPv6 then IPv4.
   * Throws an error if it could not be parsed. */
-export function parseCIDR(mask: string): [ IPv4, number ] | [ IPv6, number ] {
+export function parseCIDR(mask: string): CIDR<IPv4 | IPv6> {
 	try {
 		return IPv6.parseCIDR(mask)
 	} catch (e) {
@@ -827,21 +791,21 @@ export function process(address: string): IPv4 | IPv6 {
   * rangeList can contain both IPv4 and IPv6 subnet entries and will not throw errors
   * on matching IPv4 addresses to IPv6 ranges or vice versa. */
 export function subnetMatch<T extends IPv4 | IPv6>(
-	addr: T,
+	address: T,
 	rangeList: RangeList<T>,
-	defaultName: T extends IPv4 ? IPv4Range : IPv6Range = "unicast"
-): T extends IPv4 ? IPv4Range : IPv6Range {
-	if (addr instanceof IPv4) {
+	defaultName: (T extends IPv4 ? IPv4Range : IPv6Range) | (string & {}) = "unicast"
+): (T extends IPv4 ? IPv4Range : IPv6Range) | (string & {}) {
+	if (address instanceof IPv4) {
 		for (const [ rangeName, rangeSubnets ] of rangeList) {
 			for (const subnet of rangeSubnets) {
-				if (subnet.ip instanceof IPv4 && addr.match(subnet.ip, subnet.bits))
+				if (subnet.ip instanceof IPv4 && address.match(subnet.ip, subnet.bits))
 					return rangeName
 			}
 		}
 	} else {
 		for (const [ rangeName, rangeSubnets ] of rangeList) {
 			for (const subnet of rangeSubnets) {
-				if (subnet.ip instanceof IPv6 && addr.match(subnet.ip, subnet.bits))
+				if (subnet.ip instanceof IPv6 && address.match(subnet.ip, subnet.bits))
 					return rangeName
 			}
 		}
