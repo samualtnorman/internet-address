@@ -1,5 +1,5 @@
 import { IPv6 } from "./IPv6"
-import { CIDR, matchCIDR, type IPvXRangeDefaults, type RangeList, type StringSuggest, subnetMatch } from "./common"
+import { CIDR, matchCIDR, subnetMatch, type IPvXRangeDefaults, type RangeList, type StringSuggest } from "./common"
 
 export type IPv4Range = IPvXRangeDefaults | "broadcast" | "carrierGradeNat" | "private"
 
@@ -51,18 +51,14 @@ export class IPv4 {
 	static broadcastAddressFromCIDR(addr: string): IPv4 | undefined {
 		const cidr = this.parseCIDR(addr)
 
-		if (!cidr)
-			return
+		if (cidr) {
+			const subnetMask = this.subnetMaskFromPrefixLength(cidr.bits)
 
-		const ipInterfaceOctets = cidr.ip.toByteArray()
-		const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits).toByteArray()
+			for (let index = 4; index--;)
+				cidr.ip.octets[index] |= subnetMask.octets[index]! ^ 0xFF
 
-		return this.fromBytes(
-			ipInterfaceOctets[0]! | (subnetMaskOctets[0]! ^ 255),
-			ipInterfaceOctets[1]! | (subnetMaskOctets[1]! ^ 255),
-			ipInterfaceOctets[2]! | (subnetMaskOctets[2]! ^ 255),
-			ipInterfaceOctets[3]! | (subnetMaskOctets[3]! ^ 255)
-		)
+			return cidr.ip
+		}
 	}
 
 	/** Checks if a given string is formatted like IPv4 address. */
@@ -87,10 +83,8 @@ export class IPv4 {
 		if (cidr) {
 			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits)
 
-			cidr.ip.octets[0] &= subnetMaskOctets.octets[0]!
-			cidr.ip.octets[1] &= subnetMaskOctets.octets[1]!
-			cidr.ip.octets[2] &= subnetMaskOctets.octets[2]!
-			cidr.ip.octets[3] &= subnetMaskOctets.octets[3]!
+			for (let index = 4; index--;)
+				cidr.ip.octets[index] &= subnetMaskOctets.octets[index]!
 
 			return cidr.ip
 		}
@@ -100,10 +94,8 @@ export class IPv4 {
 	static parse(addr: string): IPv4 | undefined {
 		const parts = this.parser(addr)
 
-		if (!parts)
-			return
-
-		return this.fromBytes(...parts)
+		if (parts)
+			return this.fromBytes(...parts)
 	}
 
 	/** Parses the string as an IPv4 Address with CIDR Notation. */
@@ -137,29 +129,30 @@ export class IPv4 {
 				parseIntAuto(match[4]!)
 			]
 
-			if (!result.some(byte => isNaN(byte)))
+			if (result.every(byte => !isNaN(byte)))
 				return result
 		} else if ((match = /^(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const value = parseIntAuto(match[1]!)
 
-			if (!(isNaN(value) || value > 0xFF_FF_FF_FF || value < 0))
+			if (!isNaN(value) && value <= 0xFF_FF_FF_FF && value >= 0)
 				return [ (value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF ]
 		} else if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const firstOctet = parseIntAuto(match[1]!)
 			const lastOctets = parseIntAuto(match[2]!)
 
-			if (!(isNaN(firstOctet) || isNaN(lastOctets) || firstOctet > 0xFF || firstOctet < 0 || lastOctets > 0xFF_FF_FF || lastOctets < 0))
+			if (!isNaN(firstOctet) && !isNaN(lastOctets) && firstOctet <= 0xFF && firstOctet >= 0 &&
+				lastOctets <= 0xFF_FF_FF && lastOctets >= 0
+			)
 				return [ firstOctet, (lastOctets >> 16) & 0xFF, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF ]
 		} else if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const firstOctet = parseIntAuto(match[1]!)
 			const secondOctet = parseIntAuto(match[2]!)
 			const lastOctets = parseIntAuto(match[3]!)
 
-			if (!(
-				isNaN(firstOctet) || isNaN(secondOctet) || isNaN(lastOctets) ||
-				firstOctet > 0xFF || firstOctet < 0 || secondOctet > 0xFF ||
-				secondOctet < 0 || lastOctets > 0xFF_FF || lastOctets < 0
-			))
+			if (!isNaN(firstOctet) && !isNaN(secondOctet) && !isNaN(lastOctets) &&
+				firstOctet <= 0xFF && firstOctet >= 0 && secondOctet <= 0xFF &&
+				secondOctet >= 0 && lastOctets <= 0xFF_FF && lastOctets >= 0
+			)
 				return [ firstOctet, secondOctet, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF ]
 		}
 	}
@@ -194,14 +187,11 @@ export class IPv4 {
 	  * (valid netmask)
 	  * @returns Either the CIDR length or `undefined` if mask is not valid */
 	prefixLengthFromSubnetMask(): number | undefined {
-		const /** number of zeros in octet */ zerotable: Record<number, number> =
-			{ 0: 8, 128: 7, 192: 6, 224: 5, 240: 4, 248: 3, 252: 2, 254: 1, 255: 0 }
-
 		let /** non-zero encountered stop scanning for zeros */ stop = false
 		let cidr = 0
 
 		for (let index = 4; index--;) {
-			const zeros = zerotable[this.octets[index]!]
+			const zeros = { 0: 8, 128: 7, 192: 6, 224: 5, 240: 4, 248: 3, 252: 2, 254: 1, 255: 0 }[this.octets[index]!]
 
 			if (zeros == undefined || (stop && zeros != 0))
 				return
@@ -228,7 +218,7 @@ export class IPv4 {
 	/** Converts this IPv4 address to an IPv4-mapped IPv6 address. */
 	toIPv4MappedAddress(): IPv6 {
 		return IPv6.fromBytes(
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, this.octets[0]!, this.octets[1]!, this.octets[2]!, this.octets[3]!
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, ...this.octets as any as [ number, number, number, number ]
 		)
 	}
 
