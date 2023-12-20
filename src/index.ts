@@ -1,5 +1,4 @@
-/* eslint-disable regexp/optimal-quantifier-concatenation, regexp/prefer-d, regexp/prefer-plus-quantifier,
-	regexp/no-useless-non-capturing-group, regexp/no-trivially-nested-quantifier,
+/* eslint-disable regexp/optimal-quantifier-concatenation, regexp/no-trivially-nested-quantifier,
 	unicorn/throw-new-error, @typescript-eslint/ban-types, unicorn/prefer-spread, prefer-named-capture-group,
 	regexp/no-unused-capturing-group, radix, unicorn/prevent-abbreviations */
 export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved"
@@ -19,31 +18,28 @@ export type RangeList<T extends IPv4 | IPv6> = Map<(T extends IPv4 ? IPv4Range :
 // A list of regular expressions that match arbitrary IPv4 addresses,
 // for which a number of weird notations exist.
 // Note that an address like 0010.0xa5.1.1 is considered legal.
-const ipv4Part = `(0?\\d+|0x[a-f0-9]+)`
 
 const ipv4Regexes = {
-	fourOctet: new RegExp(`^${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}$`, `i`),
-	threeOctet: new RegExp(`^${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}$`, `i`),
-	twoOctet: new RegExp(`^${ipv4Part}\\.${ipv4Part}$`, `i`),
-	longValue: new RegExp(`^${ipv4Part}$`, `i`)
+	fourOctet: /^(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)$/i,
+	threeOctet: /^(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)$/i,
+	twoOctet: /^(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)$/i,
+	longValue: /^(0?\d+|0x[a-f\d]+)$/i
 }
 
 // Regular Expression for checking Octal numbers
 const octalRegex = /^0[0-7]+$/
 const hexRegex = /^0x[a-f\d]+$/i
-const zoneIndex = `%[0-9a-z]{1,}`
 
 // IPv6-matching regular expressions.
 // For IPv6, the task is simpler: it is enough to match the colon-delimited
 // hexadecimal IPv6 and a transitional variant with dotted-decimal IPv4 at
 // the end.
-const ipv6Part = `(?:[0-9a-f]+::?)+`
 
 const ipv6Regexes = {
-	zoneIndex: new RegExp(zoneIndex, `i`),
-	native: new RegExp(`^(::)?(${ipv6Part})?([0-9a-f]+)?(::)?(${zoneIndex})?$`, `i`),
-	deprecatedTransitional: new RegExp(`^(?:::)(${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}(${zoneIndex})?)$`, `i`),
-	transitional: new RegExp(`^((?:${ipv6Part})|(?:::)(?:${ipv6Part})?)${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}(${zoneIndex})?$`, `i`)
+	zoneIndex: /%[\da-z]+/i,
+	native: /^(::)?((?:[\da-f]+::?)+)?([\da-f]+)?(::)?(%[\da-z]+)?$/i,
+	deprecatedTransitional: /^::((0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)(%[\da-z]+)?)$/i,
+	transitional: /^((?:[\da-f]+::?)+|::(?:(?:[\da-f]+::?)+)?)(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)(%[\da-z]+)?$/i
 }
 
 // Expand :: in an IPv6 address or address part consisting of `parts` groups.
