@@ -58,14 +58,14 @@ describe("IPv4.parse()", () => {
 	test("2 parts", () => expect(IPv4.parse("25.3367299").octets).toEqual(new Uint8Array([ 25, 51, 97, 131 ])))
 
 	describe("reject invalid IPv4", () => {
-		test("non-IPv4 string", () => expect(() => IPv4.parse("133.89.60.foo")).toThrow())
+		test("non-IPv4 string", () => expect(IPv4.parse("133.89.60.foo")).toBeUndefined())
 
 		describe("part out of range", () => {
-			test("2 parts", () => expect(() => IPv4.parse("244.16777216")).toThrow())
-			test("3 parts", () => expect(() => IPv4.parse("96.197.65536")).toThrow())
+			test("2 parts", () => expect(IPv4.parse("244.16777216")).toBeUndefined())
+			test("3 parts", () => expect(IPv4.parse("96.197.65536")).toBeUndefined())
 		})
 
-		test("invalid octal", () => expect(() => IPv4.parse("86.08.13.97")).toThrow())
+		test("invalid octal", () => expect(IPv4.parse("86.08.13.97")).toBeUndefined())
 	})
 })
 
@@ -105,9 +105,9 @@ test("IPv4.parseCIDR()", () => {
 	expect(address.matchCIDR(IPv4.parseCIDR("10.4.5.0/15"))).toBe(true)
 	expect(address.matchCIDR(IPv4.parseCIDR("10.5.0.2/32"))).toBe(false)
 	expect(address.matchCIDR(IPv4.parseCIDR("10.5.0.1/32"))).toBe(true)
-	expect(() => IPv4.parseCIDR("10.5.0.1")).toThrow(Error)
-	expect(() => IPv4.parseCIDR("0.0.0.0/-1")).toThrow(Error)
-	expect(() => IPv4.parseCIDR("0.0.0.0/33")).toThrow(Error)
+	expect(IPv4.parseCIDR("10.5.0.1")).toBeUndefined()
+	expect(IPv4.parseCIDR("0.0.0.0/-1")).toBeUndefined()
+	expect(IPv4.parseCIDR("0.0.0.0/33")).toBeUndefined()
 })
 
 test("IPv4.prototype.range()", () => {
@@ -235,7 +235,7 @@ test("parse()", () => {
 	expect(parse("2001:db8:f53a::1%2").toString()).toBe("2001:db8:f53a::1%2")
 	expect(parse("2001:db8:f53a::1%WAT").toString()).toBe("2001:db8:f53a::1%WAT")
 	expect(parse("2001:db8:f53a::1%sUp").toString()).toBe("2001:db8:f53a::1%sUp")
-	expect(() => parse("::some.nonsense")).toThrow()
+	expect(parse("::some.nonsense")).toBeUndefined()
 	expect(parse("8.8.8.8")).toBeInstanceOf(IPv4)
 	expect(parse("2001:db8:3312::1")).toBeInstanceOf(IPv6)
 	expect(parse("2001:db8:3312::1%z")).toBeInstanceOf(IPv6)
@@ -244,7 +244,7 @@ test("parse()", () => {
 
 test("IPv6.isIPv6()", () => {
 	expect(IPv6.isIPv6("2001:db8:F53A::1")).toBe(true)
-	expect(IPv6.isIPv6("200001::1")).toBe(true)
+	expect(IPv6.isIPv6("200001::1")).toBe(false)
 	expect(IPv6.isIPv6("::ffff:192.168.1.1")).toBe(true)
 	expect(IPv6.isIPv6("::ffff:192.168.1.1%z")).toBe(true)
 	expect(IPv6.isIPv6("::10.2.3.4")).toBe(true)
@@ -287,7 +287,7 @@ test("IPv6.parse()", () => {
 	expect(IPv6.parse("::").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0, 0, 0 ]))
 	expect(IPv6.parse("::%z").hextets).toEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0, 0, 0 ]))
 	expect(IPv6.parse("::%z").zoneId).toEqual("z")
-	expect(() => IPv6.parse("fe80::0::1")).toThrow()
+	expect(IPv6.parse("fe80::0::1")).toBeUndefined()
 })
 
 test("IPv6.prototype.match()", () => {
@@ -316,9 +316,9 @@ test("IPv6.parseCIDR()", () => {
 	expect(address.matchCIDR(IPv6.parseCIDR("2001:db9:f500::1/40"))).toBe(false)
 	expect(address.matchCIDR(IPv6.parseCIDR("2001:db9:f500::1%z/40"))).toBe(false)
 	expect(address.matchCIDR(IPv6.parseCIDR("2001:db8:f53a::1/128"))).toBe(true)
-	expect(() => IPv6.parseCIDR("2001:db8:f53a::1")).toThrow()
-	expect(() => IPv6.parseCIDR("2001:db8:f53a::1/-1")).toThrow()
-	expect(() => IPv6.parseCIDR("2001:db8:f53a::1/129")).toThrow()
+	expect(IPv6.parseCIDR("2001:db8:f53a::1")).toBeUndefined()
+	expect(IPv6.parseCIDR("2001:db8:f53a::1/-1")).toBeUndefined()
+	expect(IPv6.parseCIDR("2001:db8:f53a::1/129")).toBeUndefined()
 })
 
 test("IPv4.prototype.toIPv4MappedAddress()", () => {
@@ -330,7 +330,7 @@ test("IPv4.prototype.toIPv4MappedAddress()", () => {
 })
 
 test("IPv6.prototype.toIPv4Address()", () => {
-	expect(() => IPv6.parse("2001:db8::1").toIPv4Address()).toThrow()
+	expect(IPv6.parse("2001:db8::1").toIPv4Address()).toBeUndefined()
 })
 
 test("IPv6.prototype.range()", () => {
@@ -433,8 +433,8 @@ test("IPv4.prototype.prefixLengthFromSubnetMask()", () => {
 	expect(IPv4.parse("192.0.0.0").prefixLengthFromSubnetMask()).toBe(2)
 	expect(IPv4.parse("128.0.0.0").prefixLengthFromSubnetMask()).toBe(1)
 	expect(IPv4.parse("0.0.0.0").prefixLengthFromSubnetMask()).toBe(0)
-	expect(IPv4.parse("192.168.255.0").prefixLengthFromSubnetMask()).toBe(undefined)
-	expect(IPv4.parse("255.0.255.0").prefixLengthFromSubnetMask()).toBe(undefined)
+	expect(IPv4.parse("192.168.255.0").prefixLengthFromSubnetMask()).toBeUndefined()
+	expect(IPv4.parse("255.0.255.0").prefixLengthFromSubnetMask()).toBeUndefined()
 })
 
 test("IPv6.prototype.prefixLengthFromSubnetMask()", () => {
@@ -445,9 +445,9 @@ test("IPv6.prototype.prefixLengthFromSubnetMask()", () => {
 	expect(IPv6.parse("ffff:ffff:ffff::%z").prefixLengthFromSubnetMask()).toBe(48)
 	expect(IPv6.parse("::").prefixLengthFromSubnetMask()).toBe(0)
 	expect(IPv6.parse("::%z").prefixLengthFromSubnetMask()).toBe(0)
-	expect(IPv6.parse("2001:db8::").prefixLengthFromSubnetMask()).toBe(undefined)
-	expect(IPv6.parse("ffff:0:0:ffff::").prefixLengthFromSubnetMask()).toBe(undefined)
-	expect(IPv6.parse("ffff:0:0:ffff::%z").prefixLengthFromSubnetMask()).toBe(undefined)
+	expect(IPv6.parse("2001:db8::").prefixLengthFromSubnetMask()).toBeUndefined()
+	expect(IPv6.parse("ffff:0:0:ffff::").prefixLengthFromSubnetMask()).toBeUndefined()
+	expect(IPv6.parse("ffff:0:0:ffff::%z").prefixLengthFromSubnetMask()).toBeUndefined()
 })
 
 test("IPv4.subnetMaskFromPrefixLength()", () => {

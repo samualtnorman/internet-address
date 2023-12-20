@@ -56,10 +56,11 @@ export class IPv6 {
 		return new this(new Uint16Array([ hextet0, hextet1, hextet2, hextet3, hextet4, hextet5, hextet6, hextet7 ]), zoneId)
 	}
 
-	/** A utility function to return broadcast address given the IPv6 interface and prefix length in CIDR notation */
-	static broadcastAddressFromCIDR(addr: string): IPv6 {
-		try {
-			const cidr = this.parseCIDR(addr)
+	/** @returns Broadcast adress from parsed CIDR or `undefined` if invalid CIDR string */
+	static broadcastAddressFromCIDR(address: string): IPv6 | undefined {
+		const cidr = this.parseCIDR(address)
+
+		if (cidr) {
 			const ipInterfaceOctets = cidr.ip.toByteArray()
 			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits).toByteArray()
 
@@ -81,47 +82,24 @@ export class IPv6 {
 				ipInterfaceOctets[14]! | (subnetMaskOctets[14]! ^ 255),
 				ipInterfaceOctets[15]! | (subnetMaskOctets[15]! ^ 255)
 			)
-		} catch (error) {
-			throw Error(`The address does not have IPv6 CIDR format (${error})`)
 		}
 	}
 
 	/** Checks if a given string is formatted like IPv6 address. */
-	static isIPv6(addr: string): boolean {
-		return Boolean(this.parser(addr))
+	static isIPv6(address: string): boolean {
+		return Boolean(this.parser(address))
 	}
 
 	/** Checks to see if string is a valid IPv6 Address. */
-	static isValid(addr: string): boolean {
-		// Since IPv6.isValid is always called first, this shortcut
-		// provides a substantial performance gain.
-		if (!addr.includes(`:`))
-			return false
-
-		try {
-			const parsedAddress = this.parser(addr)
-
-			if (!parsedAddress)
-				return false
-
-			for (const part of parsedAddress.parts) {
-				if (part < 0 || part > 0xFF_FF)
-					return false
-			}
-
-			// eslint-disable-next-line no-new
-			new this(new Uint16Array(parsedAddress.parts), parsedAddress.zoneId)
-
-			return true
-		} catch {
-			return false
-		}
+	static isValid(address: string): boolean {
+		return Boolean(address.includes(`:`) && this.parser(address))
 	}
 
-	/** A utility function to return network address given the IPv6 interface and prefix length in CIDR notation. */
-	static networkAddressFromCIDR(addr: string): IPv6 {
-		try {
-			const cidr = this.parseCIDR(addr)
+	/** @returns Network address from parsed CIDR or `undefined` if invalid CIDR string */
+	static networkAddressFromCIDR(address: string): IPv6 | undefined {
+		const cidr = this.parseCIDR(address)
+
+		if (cidr) {
 			const ipInterfaceOctets = cidr.ip.toByteArray()
 			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits).toByteArray()
 
@@ -144,59 +122,57 @@ export class IPv6 {
 				ipInterfaceOctets[14]! & subnetMaskOctets[14]!,
 				ipInterfaceOctets[15]! & subnetMaskOctets[15]!
 			)
-		} catch (error) {
-			throw Error(`The address does not have IPv6 CIDR format`, { cause: error })
 		}
 	}
 
-	/** Tries to parse and validate a string with IPv6 address.
-	  * Throws an error if it fails. */
-	static parse(addr: string): IPv6 {
-		const parsedAddress = this.parser(addr)
-
-		if (!parsedAddress)
-			throw Error(`String is not formatted like an IPv6 Address`)
-
-		return new this(new Uint16Array(parsedAddress.parts), parsedAddress.zoneId)
+	/** @returns Parsed IPv6 or `undefined` if invalid. */
+	static parse(addr: string): IPv6 | undefined {
+		return this.parser(addr)
 	}
 
-	static parseCIDR(addr: string): CIDR<IPv6> {
+	/** @returns parsed `CIDR` or `undefined` if invalid */
+	static parseCIDR(addr: string): CIDR<IPv6> | undefined {
 		const match = /^(.+)\/(\d+)$/.exec(addr)
 
 		if (match) {
 			const maskLength = parseInt(match[2]!)
 
-			if (maskLength >= 0 && maskLength <= 128)
-				return new CIDR(this.parse(match[1]!), maskLength)
-		}
+			if (maskLength >= 0 && maskLength <= 128) {
+				const parsed = this.parse(match[1]!)
 
-		throw Error(`String is not formatted like an IPv6 CIDR range`)
+				if (parsed)
+					return new CIDR(parsed, maskLength)
+			}
+		}
 	}
 
 	/** Parse an IPv6 address. */
-	static parser(string: string): { parts: number[], zoneId: string | undefined } | undefined {
+	static parser(string: string): IPv6 | undefined {
 		let match
 
 		if ((match = /^::((\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?)$/i.exec(string)))
-			return this.parser(`::ffff:${match[1]}`)
+			return this.parser(`::FFFF:${match[1]}`)
 
 		if (/^(?:::)?(?:[\da-f]+::?)*[\da-f]*(?:::)?(?:%[\da-z]+)?$/i.test(string))
-			return expandIPv6(string, 8)
+			return expandIPv6(string)
 
 		if ((match = /^((?:[\da-f]+::?)+|::(?:[\da-f]+::?)*)(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?$/i.exec(string))) {
-			const address = expandIPv6(match[1]!.slice(0, -1) + (match[6] || ``), 6)!
+			const address = expandIPv6(`${match[1]!.slice(0, -1)}:0:0${match[6] || ``}`)
 
-			if (address.parts) {
+			if (address) {
 				const octets = [ parseInt(match[2]!), parseInt(match[3]!), parseInt(match[4]!), parseInt(match[5]!) ]
 
-				for (const octet of octets) {
-					if (octet < 0 || octet > 255)
-						return
-				}
+				if (octets.some(octet => octet < 0 || octet > 255))
+					return
 
-				address.parts.push((octets[0]! << 8) | octets[1]!, (octets[2]! << 8) | octets[3]!)
+				const u8View = new Uint8Array(address.hextets.buffer)
 
-				return { parts: address.parts, zoneId: address.zoneId }
+				u8View[13] = octets[0]!
+				u8View[12] = octets[1]!
+				u8View[15] = octets[2]!
+				u8View[14] = octets[3]!
+
+				return address
 			}
 		}
 	}
@@ -295,15 +271,13 @@ export class IPv6 {
 			(this.zoneId ? `%${this.zoneId}` : ``)
 	}
 
-	/** Converts this address to IPv4 address if it is an IPv4-mapped IPv6 address.
-	  * Throws an error otherwise. */
-	toIPv4Address(): IPv4 {
-		if (!this.isIPv4MappedAddress())
-			throw Error(`Trying to convert a generic ipv6 address to ipv4`)
+	/** @returns IPv4 address of IPv4-mapped IPv6 address or `undefined` if it is not. */
+	toIPv4Address(): IPv4 | undefined {
+		if (this.isIPv4MappedAddress()) {
+			const u8View = new Uint8Array(this.hextets.buffer)
 
-		const u8View = new Uint8Array(this.hextets.buffer)
-
-		return IPv4.fromBytes(u8View[13]!, u8View[12]!, u8View[15]!, u8View[14]!)
+			return IPv4.fromBytes(u8View[13]!, u8View[12]!, u8View[15]!, u8View[14]!)
+		}
 	}
 
 	/** @returns The address in expanded format with all zeros included, like `2001:db8:8:66:0:0:0:1`.
@@ -342,7 +316,7 @@ export class IPv6 {
 }
 
 /** Expand :: in an IPv6 address or address part consisting of `parts` groups. */
-function expandIPv6(string: string, parts: number): { parts: number[], zoneId: string | undefined } | undefined {
+function expandIPv6(string: string): IPv6 | undefined {
 	// More than one '::' means invalid adddress
 	if (string.includes(`::`, string.indexOf(`::`) + 1))
 		return
@@ -355,29 +329,35 @@ function expandIPv6(string: string, parts: number): { parts: number[], zoneId: s
 		string = string.replace(/%.+$/, ``)
 	}
 
-	let /** How many parts do we already have? */ colonCount = string.match(/:/g)?.length ?? 0
+	const [ left, right ] = string.split(`::`)
+	const u16View = new Uint16Array(8)
+	const leftHextets = left ? left.split(`:`) : undefined
+	const rightHextets = right ? right.split(`:`) : undefined
 
-	// 0::0 is two parts more than ::
-	if (string.slice(0, 2) == `::`)
-		colonCount--
-
-	if (string.slice(-2) == `::`)
-		colonCount--
-
-	// The following loop would hang if colonCount > parts
-	if (colonCount > parts)
+	if ((leftHextets?.length ?? 0) + (rightHextets?.length ?? 0) > 8)
 		return
 
-	// Insert the missing zeros
-	string = string.replace(`::`, `:${`0:`.repeat(parts - colonCount)}`)
+	if (leftHextets) {
+		for (const [ index, hextet ] of leftHextets.entries()) {
+			const parsedInt = parseInt(hextet, 16)
 
-	// Trim any garbage which may be hanging around if :: was at the edge in
-	// the source strin
-	if (string[0] == `:`)
-		string = string.slice(1)
+			if (isNaN(parsedInt) || parsedInt < 0 || parsedInt > 0xFF_FF)
+				return
 
-	if (string.at(-1) == `:`)
-		string = string.slice(0, -1)
+			u16View[index] = parsedInt
+		}
+	}
 
-	return { parts: string.split(`:`).map(hex => parseInt(hex, 16)), zoneId }
+	if (rightHextets) {
+		for (const [ index, hextet ] of rightHextets.entries()) {
+			const parsedInt = parseInt(hextet, 16)
+
+			if (isNaN(parsedInt) || parsedInt < 0 || parsedInt > 0xFF_FF)
+				return
+
+			u16View[(8 - rightHextets.length) + index] = parsedInt
+		}
+	}
+
+	return new IPv6(u16View, zoneId)
 }

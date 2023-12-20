@@ -47,22 +47,22 @@ export class IPv4 {
 		return new IPv4(new Uint8Array([ byte0, byte1, byte2, byte3 ]))
 	}
 
-	/** A utility function to return broadcast address given the IPv4 interface and prefix length in CIDR notation */
-	static broadcastAddressFromCIDR(addr: string): IPv4 {
-		try {
-			const cidr = this.parseCIDR(addr)
-			const ipInterfaceOctets = cidr.ip.toByteArray()
-			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits).toByteArray()
+	/** @returns Broadcast address from CIDR or `undefined` if invalid. */
+	static broadcastAddressFromCIDR(addr: string): IPv4 | undefined {
+		const cidr = this.parseCIDR(addr)
 
-			return this.fromBytes(
-				ipInterfaceOctets[0]! | (subnetMaskOctets[0]! ^ 255),
-				ipInterfaceOctets[1]! | (subnetMaskOctets[1]! ^ 255),
-				ipInterfaceOctets[2]! | (subnetMaskOctets[2]! ^ 255),
-				ipInterfaceOctets[3]! | (subnetMaskOctets[3]! ^ 255)
-			)
-		} catch {
-			throw Error(`The address does not have IPv4 CIDR format`)
-		}
+		if (!cidr)
+			return
+
+		const ipInterfaceOctets = cidr.ip.toByteArray()
+		const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits).toByteArray()
+
+		return this.fromBytes(
+			ipInterfaceOctets[0]! | (subnetMaskOctets[0]! ^ 255),
+			ipInterfaceOctets[1]! | (subnetMaskOctets[1]! ^ 255),
+			ipInterfaceOctets[2]! | (subnetMaskOctets[2]! ^ 255),
+			ipInterfaceOctets[3]! | (subnetMaskOctets[3]! ^ 255)
+		)
 	}
 
 	/** Checks if a given string is formatted like IPv4 address. */
@@ -71,25 +71,8 @@ export class IPv4 {
 	}
 
 	/** Checks if a given string is a valid IPv4 address. */
-	static isValid(addr: string): boolean {
-		try {
-			const parts = this.parser(addr)
-
-			if (!parts)
-				return false
-
-			for (const part of parts) {
-				if (part < 0 || part > 0xFF)
-					return false
-			}
-
-			// TODO I'm pretty sure this can't throw making try catch unnecessary
-			this.fromBytes(...parts)
-
-			return true
-		} catch {
-			return false
-		}
+	static isValid(address: string): boolean {
+		return Boolean((this.parser(address))?.every(part => part >= 0 && part <= 0xFF))
 	}
 
 	/** Checks if a given string is a full four-part IPv4 Address. */
@@ -97,47 +80,46 @@ export class IPv4 {
 		return IPv4.isValid(addr) && Boolean(/^(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){3}$/.test(addr))
 	}
 
-	/** A utility function to return network address given the IPv4 interface and prefix length in CIDR notation */
-	static networkAddressFromCIDR(addr: string): IPv4 {
-		try {
-			const cidr = this.parseCIDR(addr)
-			const ipInterfaceOctets = cidr.ip.toByteArray()
-			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits).toByteArray()
+	/** @returns Network address from CIDR or `undefined` if invalid. */
+	static networkAddressFromCIDR(addr: string): IPv4 | undefined {
+		const cidr = this.parseCIDR(addr)
 
-			return this.fromBytes(
-				ipInterfaceOctets[0]! & subnetMaskOctets[0]!,
-				ipInterfaceOctets[1]! & subnetMaskOctets[1]!,
-				ipInterfaceOctets[2]! & subnetMaskOctets[2]!,
-				ipInterfaceOctets[3]! & subnetMaskOctets[3]!
-			)
-		} catch {
-			throw Error(`The address does not have IPv4 CIDR format`)
+		if (cidr) {
+			const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr.bits)
+
+			cidr.ip.octets[0] &= subnetMaskOctets.octets[0]!
+			cidr.ip.octets[1] &= subnetMaskOctets.octets[1]!
+			cidr.ip.octets[2] &= subnetMaskOctets.octets[2]!
+			cidr.ip.octets[3] &= subnetMaskOctets.octets[3]!
+
+			return cidr.ip
 		}
 	}
 
-	/** Tries to parse and validate a string with IPv4 address.
-	  * Throws an error if it fails. */
-	static parse(addr: string): IPv4 {
+	/** @returns Parsed IPv4 address or `undefined` if invalid. */
+	static parse(addr: string): IPv4 | undefined {
 		const parts = this.parser(addr)
 
 		if (!parts)
-			throw Error(`String is not formatted like an IPv4 Address`)
+			return
 
 		return this.fromBytes(...parts)
 	}
 
 	/** Parses the string as an IPv4 Address with CIDR Notation. */
-	static parseCIDR(address: string): CIDR<IPv4> {
+	static parseCIDR(address: string): CIDR<IPv4> | undefined {
 		const match = /^(.+)\/(\d+)$/.exec(address)
 
 		if (match) {
 			const maskLength = Number(match[2])
 
-			if (match[1] && maskLength >= 0 && maskLength <= 32)
-				return new CIDR(this.parse(match[1]), maskLength)
-		}
+			if (match[1] && maskLength >= 0 && maskLength <= 32) {
+				const parsed = this.parse(match[1])
 
-		throw Error(`String is not formatted like an IPv4 CIDR range`)
+				if (parsed)
+					return new CIDR(parsed, maskLength)
+			}
+		}
 	}
 
 	/** Classful variants (like a.b, where a is an octet, and b is a 24-bit
@@ -148,45 +130,37 @@ export class IPv4 {
 
 		// parseInt recognizes all that octal & hexadecimal weirdness for us
 		if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
-			return [
+			const result: [ number, number, number, number ] = [
 				parseIntAuto(match[1]!),
 				parseIntAuto(match[2]!),
 				parseIntAuto(match[3]!),
 				parseIntAuto(match[4]!)
 			]
-		}
 
-		if ((match = /^(\d+|0x[a-f\d]+)$/i.exec(string))) {
+			if (!result.some(byte => isNaN(byte)))
+				return result
+		} else if ((match = /^(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const value = parseIntAuto(match[1]!)
 
-			if (value > 0xFF_FF_FF_FF || value < 0)
-				throw Error(`Address part outside defined range`)
-
-			return [ (value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF ]
-		}
-
-		if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
+			if (!(isNaN(value) || value > 0xFF_FF_FF_FF || value < 0))
+				return [ (value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF ]
+		} else if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const firstOctet = parseIntAuto(match[1]!)
 			const lastOctets = parseIntAuto(match[2]!)
 
-			if (firstOctet > 0xFF || firstOctet < 0 || lastOctets > 0xFF_FF_FF || lastOctets < 0)
-				throw Error(`Address part outside defined range`)
-
-			return [ firstOctet, (lastOctets >> 16) & 0xFF, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF ]
-		}
-
-		if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
+			if (!(isNaN(firstOctet) || isNaN(lastOctets) || firstOctet > 0xFF || firstOctet < 0 || lastOctets > 0xFF_FF_FF || lastOctets < 0))
+				return [ firstOctet, (lastOctets >> 16) & 0xFF, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF ]
+		} else if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const firstOctet = parseIntAuto(match[1]!)
 			const secondOctet = parseIntAuto(match[2]!)
 			const lastOctets = parseIntAuto(match[3]!)
 
-			if (
+			if (!(
+				isNaN(firstOctet) || isNaN(secondOctet) || isNaN(lastOctets) ||
 				firstOctet > 0xFF || firstOctet < 0 || secondOctet > 0xFF ||
 				secondOctet < 0 || lastOctets > 0xFF_FF || lastOctets < 0
-			)
-				throw Error(`Address part outside defined range`)
-
-			return [ firstOctet, secondOctet, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF ]
+			))
+				return [ firstOctet, secondOctet, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF ]
 		}
 	}
 
@@ -253,7 +227,9 @@ export class IPv4 {
 
 	/** Converts this IPv4 address to an IPv4-mapped IPv6 address. */
 	toIPv4MappedAddress(): IPv6 {
-		return IPv6.parse(`::ffff:${this.toString()}`)
+		return IPv6.fromBytes(
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, this.octets[0]!, this.octets[1]!, this.octets[2]!, this.octets[3]!
+		)
 	}
 
 	/** Symmetrical method strictly for aligning with the IPv6 methods. */
@@ -267,23 +243,19 @@ export class IPv4 {
 	}
 }
 
-// Regular Expression for checking Octal numbers
-const octalRegex = /^0[0-7]+$/
-const hexRegex = /^0x[a-f\d]+$/i
-
-function parseIntAuto(string: string) {
+function parseIntAuto(string: string): number {
 	// Hexadedimal base 16 (0x#)
-	if (hexRegex.test(string))
+	if (/^0x[a-f\d]+$/i.test(string))
 		return parseInt(string, 16)
 
 	// While octal representation is discouraged by ECMAScript 3
 	// and forbidden by ECMAScript 5, we silently allow it to
 	// work only if the rest of the string has numbers less than 8.
 	if (string[0] === `0` && !isNaN(parseInt(string[1]!, 10))) {
-		if (octalRegex.test(string))
+		if (/^0[0-7]+$/.test(string))
 			return parseInt(string, 8)
 
-		throw Error(`Cannot parse ${JSON.stringify(string)} as octal`)
+		return NaN
 	}
 
 	// Always include the base 10 radix!

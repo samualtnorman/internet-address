@@ -20,32 +20,20 @@ export function isValid(address: string): boolean {
 
 /** Attempts to parse an IP Address, first through IPv6 then IPv4.
   * Throws an error if it could not be parsed. */
-export function parse(address: string): IPv4 | IPv6 {
+export function parse(address: string): IPv4 | IPv6 | undefined {
 	if (IPv6.isValid(address))
 		return IPv6.parse(address)
 
 	if (IPv4.isValid(address))
 		return IPv4.parse(address)
-
-	throw Error(`The address has neither IPv6 nor IPv4 format`)
 }
 
 /** Attempt to parse CIDR notation, first through IPv6 then IPv4.
   * Throws an error if it could not be parsed. */
-export function parseCIDR(mask: string): CIDR<IPv4 | IPv6> {
-	try {
-		return IPv6.parseCIDR(mask)
-	} catch {
-		try {
-			return IPv4.parseCIDR(mask)
-		} catch {
-			throw Error(`The address has neither IPv6 nor IPv4 CIDR format`)
-		}
-	}
-}
+export const parseCIDR = (mask: string): CIDR<IPv4 | IPv6> | undefined => IPv6.parseCIDR(mask) || IPv4.parseCIDR(mask)
 
 /** Parse an address and return plain IPv4 address if it is an IPv4-mapped address. */
-export function process(address: string): IPv4 | IPv6 {
+export function process(address: string): IPv4 | IPv6 | undefined {
 	const parsedAddress = parse(address)
 
 	if (parsedAddress instanceof IPv6 && parsedAddress.isIPv4MappedAddress())
