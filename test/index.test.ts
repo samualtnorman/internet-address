@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest"
-import { IPv4, IPv6, RangeList, fromByteArray, isValid, parse, parseCIDR, process, subnetMatch } from "../src"
+import { IPv4 } from "../src/IPv4"
+import { IPv6 } from "../src/IPv6"
+import { fromByteArray, isValid, parse, parseCIDR, process } from "../src"
+import { RangeList, subnetMatch } from "../src/common"
 
 describe("new IPv4()", () => {
 	const u8View = new Uint8Array([ 167, 162, 196, 35 ])
