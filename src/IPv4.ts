@@ -3,14 +3,6 @@ import { CIDR, matchCIDR, type IPvXRangeDefaults, type RangeList, type StringSug
 
 export type IPv4Range = IPvXRangeDefaults | "broadcast" | "carrierGradeNat" | "private"
 
-// A list of regular expressions that match arbitrary IPv4 addresses,
-// for which a number of weird notations exist.
-// Note that an address like 0010.0xa5.1.1 is considered legal.
-const fourOctet = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i
-const threeOctet = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i
-const twoOctet = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i
-const longValue = /^(\d+|0x[a-f\d]+)$/i
-
 export class IPv4 {
 	/** Special IPv4 address ranges.
 	  * @see https://en.wikipedia.org/wiki/Reserved_IP_addresses */
@@ -155,7 +147,7 @@ export class IPv4 {
 		let match
 
 		// parseInt recognizes all that octal & hexadecimal weirdness for us
-		if ((match = fourOctet.exec(string))) {
+		if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			return [
 				parseIntAuto(match[1]!),
 				parseIntAuto(match[2]!),
@@ -164,7 +156,7 @@ export class IPv4 {
 			]
 		}
 
-		if ((match = longValue.exec(string))) {
+		if ((match = /^(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const value = parseIntAuto(match[1]!)
 
 			if (value > 0xFF_FF_FF_FF || value < 0)
@@ -173,7 +165,7 @@ export class IPv4 {
 			return [ (value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF ]
 		}
 
-		if ((match = twoOctet.exec(string))) {
+		if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const firstOctet = parseIntAuto(match[1]!)
 			const lastOctets = parseIntAuto(match[2]!)
 
@@ -183,7 +175,7 @@ export class IPv4 {
 			return [ firstOctet, (lastOctets >> 16) & 0xFF, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF ]
 		}
 
-		if ((match = threeOctet.exec(string))) {
+		if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const firstOctet = parseIntAuto(match[1]!)
 			const secondOctet = parseIntAuto(match[2]!)
 			const lastOctets = parseIntAuto(match[3]!)

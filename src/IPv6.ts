@@ -3,15 +3,6 @@ import { CIDR, matchCIDR, type IPvXRangeDefaults, type RangeList, type StringSug
 
 export type IPv6Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo"
 
-// IPv6-matching regular expressions.
-// For IPv6, the task is simpler: it is enough to match the colon-delimited
-// hexadecimal IPv6 and a transitional variant with dotted-decimal IPv4 at
-// the end.
-const zoneIndex = /%[\da-z]+/i
-const native = /^(?:::)?(?:[\da-f]+::?)*[\da-f]*(?:::)?(?:%[\da-z]+)?$/i
-const deprecatedTransitional = /^::((\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?)$/i
-const transitional = /^((?:[\da-f]+::?)+|::(?:[\da-f]+::?)*)(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?$/i
-
 export class IPv6 {
 	/** Special IPv6 ranges */
 	static SpecialRanges: RangeList<IPv6> = new Map([
@@ -186,13 +177,13 @@ export class IPv6 {
 	static parser(string: string): { parts: number[], zoneId: string | undefined } | undefined {
 		let match
 
-		if ((match = deprecatedTransitional.exec(string)))
+		if ((match = /^::((\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?)$/i.exec(string)))
 			return this.parser(`::ffff:${match[1]}`)
 
-		if (native.test(string))
+		if (/^(?:::)?(?:[\da-f]+::?)*[\da-f]*(?:::)?(?:%[\da-z]+)?$/i.test(string))
 			return expandIPv6(string, 8)
 
-		if ((match = transitional.exec(string))) {
+		if ((match = /^((?:[\da-f]+::?)+|::(?:[\da-f]+::?)*)(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?$/i.exec(string))) {
 			const address = expandIPv6(match[1]!.slice(0, -1) + (match[6] || ``), 6)!
 
 			if (address.parts) {
@@ -356,7 +347,7 @@ function expandIPv6(string: string, parts: number): { parts: number[], zoneId: s
 	if (string.includes(`::`, string.indexOf(`::`) + 1))
 		return
 
-	let zoneId = zoneIndex.exec(string)?.[0]
+	let zoneId = /%[\da-z]+/i.exec(string)?.[0]
 
 	// Remove zone index and save it for later
 	if (zoneId) {
