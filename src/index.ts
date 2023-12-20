@@ -1,5 +1,5 @@
-/* eslint-disable unicorn/throw-new-error, unicorn/prefer-spread, prefer-named-capture-group,
-	regexp/no-unused-capturing-group, radix, unicorn/prevent-abbreviations */
+/* eslint-disable unicorn/throw-new-error, unicorn/prefer-spread, prefer-named-capture-group, radix,
+	unicorn/prevent-abbreviations */
 // eslint-disable-next-line @typescript-eslint/ban-types
 type StringSuggest<T> = (string & {}) | T
 
@@ -698,7 +698,7 @@ export class IPv6 {
 	/** @returns The address in compact, human-readable format like `2001:db8:8:66::1` in line with RFC 5952.
 	  * @see https://tools.ietf.org/html/rfc5952#section-4 */
 	toRFC5952String(): string {
-		const regex = /((^|:)(0(:|$)){2,})/g
+		const regex = /(?:^|:)(?:0(?::|$)){2,}/g
 		const string = this.toNormalizedString()
 		let bestMatchIndex = 0
 		let bestMatchLength = -1
