@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/no-null */
 import { describe, expect, test } from "vitest"
 import { IPv4, IPv6, RangeList, fromByteArray, isValid, parse, parseCIDR, process, subnetMatch } from "../src"
 
@@ -431,8 +430,8 @@ test("IPv4.prototype.prefixLengthFromSubnetMask()", () => {
 	expect(IPv4.parse("192.0.0.0").prefixLengthFromSubnetMask()).toBe(2)
 	expect(IPv4.parse("128.0.0.0").prefixLengthFromSubnetMask()).toBe(1)
 	expect(IPv4.parse("0.0.0.0").prefixLengthFromSubnetMask()).toBe(0)
-	expect(IPv4.parse("192.168.255.0").prefixLengthFromSubnetMask()).toBe(null)
-	expect(IPv4.parse("255.0.255.0").prefixLengthFromSubnetMask()).toBe(null)
+	expect(IPv4.parse("192.168.255.0").prefixLengthFromSubnetMask()).toBe(undefined)
+	expect(IPv4.parse("255.0.255.0").prefixLengthFromSubnetMask()).toBe(undefined)
 })
 
 test("IPv6.prototype.prefixLengthFromSubnetMask()", () => {
@@ -443,9 +442,9 @@ test("IPv6.prototype.prefixLengthFromSubnetMask()", () => {
 	expect(IPv6.parse("ffff:ffff:ffff::%z").prefixLengthFromSubnetMask()).toBe(48)
 	expect(IPv6.parse("::").prefixLengthFromSubnetMask()).toBe(0)
 	expect(IPv6.parse("::%z").prefixLengthFromSubnetMask()).toBe(0)
-	expect(IPv6.parse("2001:db8::").prefixLengthFromSubnetMask()).toBe(null)
-	expect(IPv6.parse("ffff:0:0:ffff::").prefixLengthFromSubnetMask()).toBe(null)
-	expect(IPv6.parse("ffff:0:0:ffff::%z").prefixLengthFromSubnetMask()).toBe(null)
+	expect(IPv6.parse("2001:db8::").prefixLengthFromSubnetMask()).toBe(undefined)
+	expect(IPv6.parse("ffff:0:0:ffff::").prefixLengthFromSubnetMask()).toBe(undefined)
+	expect(IPv6.parse("ffff:0:0:ffff::%z").prefixLengthFromSubnetMask()).toBe(undefined)
 })
 
 test("IPv4.subnetMaskFromPrefixLength()", () => {

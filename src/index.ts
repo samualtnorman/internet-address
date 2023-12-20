@@ -1,5 +1,5 @@
 /* eslint-disable regexp/optimal-quantifier-concatenation, regexp/prefer-d, regexp/prefer-plus-quantifier,
-	regexp/no-useless-non-capturing-group, regexp/no-trivially-nested-quantifier, unicorn/no-null,
+	regexp/no-useless-non-capturing-group, regexp/no-trivially-nested-quantifier,
 	unicorn/throw-new-error, @typescript-eslint/ban-types, unicorn/prefer-spread, prefer-named-capture-group,
 	regexp/no-unused-capturing-group, radix, unicorn/prevent-abbreviations */
 export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved"
@@ -47,10 +47,10 @@ const ipv6Regexes = {
 }
 
 // Expand :: in an IPv6 address or address part consisting of `parts` groups.
-function expandIPv6(string: string, parts: number): { parts: number[], zoneId: string | undefined } | null {
+function expandIPv6(string: string, parts: number): { parts: number[], zoneId: string | undefined } | undefined {
 	// More than one '::' means invalid adddress
 	if (string.includes(`::`, string.indexOf(`::`) + 1))
-		return null
+		return
 
 	let zoneId = ipv6Regexes.zoneIndex.exec(string)?.[0]
 
@@ -71,9 +71,9 @@ function expandIPv6(string: string, parts: number): { parts: number[], zoneId: s
 
 	// The following loop would hang if colonCount > parts
 	if (colonCount > parts)
-		return null
+		return
 
-	// Insert the missing zeroes
+	// Insert the missing zeros
 	string = string.replace(`::`, `:${`0:`.repeat(parts - colonCount)}`)
 
 	// Trim any garbage which may be hanging around if :: was at the edge in
@@ -263,7 +263,7 @@ export class IPv4 {
 	/** Classful variants (like a.b, where a is an octet, and b is a 24-bit
 	  * value representing last three octets; this corresponds to a class C
 	  * address) are omitted due to classless nature of modern Internet. */
-	static parser(string: string): [ number, number, number, number ] | null {
+	static parser(string: string): [ number, number, number, number ] | undefined {
 		let match
 
 		// parseInt recognizes all that octal & hexadecimal weirdness for us
@@ -308,8 +308,6 @@ export class IPv4 {
 
 			return [ firstOctet, secondOctet, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF ]
 		}
-
-		return null
 	}
 
 	/** A utility function to return subnet mask in IPv4 format given the prefix length */
@@ -338,30 +336,21 @@ export class IPv4 {
 		return this.match(cidr.ip, cidr.bits)
 	}
 
-	/** returns a number of leading ones in IPv4 address, making sure that
-	  * the rest is a solid sequence of 0's (valid netmask)
-	  * returns either the CIDR length or null if mask is not valid */
-	prefixLengthFromSubnetMask(): number | null {
-		const /** number of zeroes in octet */ zerotable: Record<number, number> = {
-			0: 8,
-			128: 7,
-			192: 6,
-			224: 5,
-			240: 4,
-			248: 3,
-			252: 2,
-			254: 1,
-			255: 0
-		}
+	/** returns a number of leading ones in IPv4 address, making sure that the rest is a solid sequence of zeros
+	  * (valid netmask)
+	  * @returns Either the CIDR length or `undefined` if mask is not valid */
+	prefixLengthFromSubnetMask(): number | undefined {
+		const /** number of zeros in octet */ zerotable: Record<number, number> =
+			{ 0: 8, 128: 7, 192: 6, 224: 5, 240: 4, 248: 3, 252: 2, 254: 1, 255: 0 }
 
-		let /** non-zero encountered stop scanning for zeroes */ stop = false
+		let /** non-zero encountered stop scanning for zeros */ stop = false
 		let cidr = 0
 
 		for (let i = 4; i--;) {
 			const zeros = zerotable[this.octets[i]!]
 
 			if (zeros == undefined || (stop && zeros != 0))
-				return null
+				return
 
 			if (zeros != 8)
 				stop = true
@@ -549,7 +538,7 @@ export class IPv6 {
 	static parse(addr: string): IPv6 {
 		const parsedAddress = this.parser(addr)
 
-		if (parsedAddress === null)
+		if (!parsedAddress)
 			throw Error(`String is not formatted like an IPv6 Address`)
 
 		return new this(new Uint16Array(parsedAddress.parts), parsedAddress.zoneId)
@@ -569,7 +558,7 @@ export class IPv6 {
 	}
 
 	/** Parse an IPv6 address. */
-	static parser(string: string): { parts: number[], zoneId: string | undefined } | null {
+	static parser(string: string): { parts: number[], zoneId: string | undefined } | undefined {
 		let match
 
 		if ((match = ipv6Regexes.deprecatedTransitional.exec(string)))
@@ -586,7 +575,7 @@ export class IPv6 {
 
 				for (const octet of octets) {
 					if (octet < 0 || octet > 255)
-						return null
+						return
 				}
 
 				address.parts.push((octets[0]! << 8) | octets[1]!, (octets[2]! << 8) | octets[3]!)
@@ -594,8 +583,6 @@ export class IPv6 {
 				return { parts: address.parts, zoneId: address.zoneId }
 			}
 		}
-
-		return null
 	}
 
 	/** A utility function to return subnet mask in IPv6 format given the prefix length */
@@ -629,11 +616,10 @@ export class IPv6 {
 		return this.match(cidr.ip, cidr.bits)
 	}
 
-	/** returns a number of leading ones in IPv6 address, making sure that
-	  * the rest is a solid sequence of 0's (valid netmask)
-	  * returns either the CIDR length or null if mask is not valid */
-	prefixLengthFromSubnetMask(): number | null {
-		const /** number of zeroes in octet */ zerotable: Record<number, number> = {
+	/** @returns Number of leading ones, making sure that the rest is a solid sequence of zeros (valid netmask)
+	  * @returns Either the CIDR length or undefined if mask is not valid */
+	prefixLengthFromSubnetMask(): number | undefined {
+		const /** number of zeros in octet */ zerotable: Record<number, number> = {
 			0: 16,
 			32_768: 15,
 			49_152: 14,
@@ -653,14 +639,14 @@ export class IPv6 {
 			65_535: 0
 		}
 
-		let /** non-zero encountered stop scanning for zeroes */ stop = false
+		let /** non-zero encountered stop scanning for zeros */ stop = false
 		let cidr = 0
 
 		for (let i = 8; i--;) {
 			const zeros = zerotable[this.hextets[i]!]
 
 			if (zeros == undefined || (stop && zeros != 0))
-				return null
+				return
 
 			if (zeros != 16)
 				stop = true
@@ -686,7 +672,7 @@ export class IPv6 {
 		])
 	}
 
-	/** Returns the address in expanded format with all zeroes included, like
+	/** Returns the address in expanded format with all zeros included, like
 	  * `2001:0db8:0008:0066:0000:0000:0000:0001`. */
 	toFixedLengthString(): string {
 		return [ ...this.hextets ].map(part => part.toString(16).padStart(4, `0`)).join(`:`) +
@@ -704,8 +690,7 @@ export class IPv6 {
 		return IPv4.fromBytes(u8View[13]!, u8View[12]!, u8View[15]!, u8View[14]!)
 	}
 
-	/** @returns The address in expanded format with all zeroes included, like `2001:db8:8:66:0:0:0:1`.
-	  *
+	/** @returns The address in expanded format with all zeros included, like `2001:db8:8:66:0:0:0:1`.
 	  * @deprecated Use {@link toFixedLengthString()} instead. */
 	toNormalizedString(): string {
 		return `${[ ...this.hextets ].map(hextet => hextet.toString(16)).join(`:`)}${
