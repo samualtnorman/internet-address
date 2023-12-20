@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/throw-new-error, unicorn/prefer-spread, prefer-named-capture-group, radix */
 // eslint-disable-next-line @typescript-eslint/ban-types
 type StringSuggest<T> = (string & {}) | T
 
