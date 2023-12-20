@@ -1,4 +1,4 @@
-/* eslint-disable regexp/optimal-quantifier-concatenation, regexp/no-trivially-nested-quantifier,
+/* eslint-disable regexp/no-trivially-nested-quantifier,
 	unicorn/throw-new-error, @typescript-eslint/ban-types, unicorn/prefer-spread, prefer-named-capture-group,
 	regexp/no-unused-capturing-group, radix, unicorn/prevent-abbreviations */
 export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved"
@@ -20,10 +20,10 @@ export type RangeList<T extends IPv4 | IPv6> = Map<(T extends IPv4 ? IPv4Range :
 // Note that an address like 0010.0xa5.1.1 is considered legal.
 
 const ipv4Regexes = {
-	fourOctet: /^(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)$/i,
-	threeOctet: /^(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)$/i,
-	twoOctet: /^(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)$/i,
-	longValue: /^(0?\d+|0x[a-f\d]+)$/i
+	fourOctet: /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i,
+	threeOctet: /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i,
+	twoOctet: /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i,
+	longValue: /^(\d+|0x[a-f\d]+)$/i
 }
 
 // Regular Expression for checking Octal numbers
@@ -38,8 +38,8 @@ const hexRegex = /^0x[a-f\d]+$/i
 const ipv6Regexes = {
 	zoneIndex: /%[\da-z]+/i,
 	native: /^(::)?((?:[\da-f]+::?)+)?([\da-f]+)?(::)?(%[\da-z]+)?$/i,
-	deprecatedTransitional: /^::((0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)(%[\da-z]+)?)$/i,
-	transitional: /^((?:[\da-f]+::?)+|::(?:(?:[\da-f]+::?)+)?)(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)\.(0?\d+|0x[a-f\d]+)(%[\da-z]+)?$/i
+	deprecatedTransitional: /^::((\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?)$/i,
+	transitional: /^((?:[\da-f]+::?)+|::(?:(?:[\da-f]+::?)+)?)(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?$/i
 }
 
 // Expand :: in an IPv6 address or address part consisting of `parts` groups.
