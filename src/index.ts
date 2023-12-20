@@ -1,5 +1,4 @@
-/* eslint-disable unicorn/throw-new-error, unicorn/prefer-spread, prefer-named-capture-group, radix,
-	unicorn/prevent-abbreviations */
+/* eslint-disable unicorn/throw-new-error, unicorn/prefer-spread, prefer-named-capture-group, radix */
 // eslint-disable-next-line @typescript-eslint/ban-types
 type StringSuggest<T> = (string & {}) | T
 
@@ -316,8 +315,8 @@ export class IPv4 {
 		const octets: [ number, number, number, number ] = [ 0, 0, 0, 0 ]
 		const filledOctetCount = Math.floor(prefix / 8)
 
-		for (let i = filledOctetCount; i--;)
-			octets[i] = 255
+		for (let index = filledOctetCount; index--;)
+			octets[index] = 255
 
 		if (filledOctetCount < 4)
 			octets[filledOctetCount] = (2 ** (prefix % 8)) - 1 << 8 - (prefix % 8)
@@ -344,8 +343,8 @@ export class IPv4 {
 		let /** non-zero encountered stop scanning for zeros */ stop = false
 		let cidr = 0
 
-		for (let i = 4; i--;) {
-			const zeros = zerotable[this.octets[i]!]
+		for (let index = 4; index--;) {
+			const zeros = zerotable[this.octets[index]!]
 
 			if (zeros == undefined || (stop && zeros != 0))
 				return
@@ -591,8 +590,8 @@ export class IPv6 {
 		const subnetMask = this.fromHextets(0, 0, 0, 0, 0, 0, 0, 0)
 		const filledHextetCount = Math.floor(prefix / 16)
 
-		for (let i = 0; i < filledHextetCount; i++)
-			subnetMask.hextets[i] = 0xFF_FF
+		for (let index = 0; index < filledHextetCount; index++)
+			subnetMask.hextets[index] = 0xFF_FF
 
 		if (filledHextetCount < 32)
 			subnetMask.hextets[filledHextetCount] = ((2 ** (prefix % 16)) - 1) << (16 - (prefix % 16))
@@ -640,8 +639,8 @@ export class IPv6 {
 		let /** non-zero encountered stop scanning for zeros */ stop = false
 		let cidr = 0
 
-		for (let i = 8; i--;) {
-			const zeros = zerotable[this.hextets[i]!]
+		for (let index = 8; index--;) {
+			const zeros = zerotable[this.hextets[index]!]
 
 			if (zeros == undefined || (stop && zeros != 0))
 				return
