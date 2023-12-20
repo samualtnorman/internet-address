@@ -1,5 +1,8 @@
-/* eslint-disable unicorn/throw-new-error, @typescript-eslint/ban-types, unicorn/prefer-spread, prefer-named-capture-group,
+/* eslint-disable unicorn/throw-new-error, unicorn/prefer-spread, prefer-named-capture-group,
 	regexp/no-unused-capturing-group, radix, unicorn/prevent-abbreviations */
+// eslint-disable-next-line @typescript-eslint/ban-types
+type StringSuggest<T> = (string & {}) | T
+
 export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved"
 export type IPv4Range = IPvXRangeDefaults | "broadcast" | "carrierGradeNat" | "private"
 export type IPv6Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo"
@@ -12,7 +15,7 @@ class CIDR<IP extends IPv4 | IPv6> {
 	}
 }
 
-export type RangeList<T extends IPv4 | IPv6> = Map<(T extends IPv4 ? IPv4Range : IPv6Range) | (string & {}), CIDR<T>[]>
+export type RangeList<T extends IPv4 | IPv6> = Map<StringSuggest<T extends IPv4 ? IPv4Range : IPv6Range>, CIDR<T>[]>
 
 // A list of regular expressions that match arbitrary IPv4 addresses,
 // for which a number of weird notations exist.
@@ -357,7 +360,7 @@ export class IPv4 {
 	}
 
 	/** Checks if the address corresponds to one of the special ranges. */
-	range(): IPv4Range | (string & {}) {
+	range(): StringSuggest<IPv4Range> {
 		return subnetMatch(this, IPv4.SpecialRanges)
 	}
 
@@ -653,7 +656,7 @@ export class IPv6 {
 	}
 
 	/** Checks if the address corresponds to one of the special ranges. */
-	range(): IPv6Range | (string & {}) {
+	range(): StringSuggest<IPv6Range> {
 		return subnetMatch(this, IPv6.SpecialRanges)
 	}
 
@@ -778,8 +781,8 @@ export function process(address: string): IPv4 | IPv6 {
 export function subnetMatch<T extends IPv4 | IPv6>(
 	address: T,
 	rangeList: RangeList<T>,
-	defaultName: (T extends IPv4 ? IPv4Range : IPv6Range) | (string & {}) = `unicast`
-): (T extends IPv4 ? IPv4Range : IPv6Range) | (string & {}) {
+	defaultName: StringSuggest<T extends IPv4 ? IPv4Range : IPv6Range> = `unicast`
+): StringSuggest<T extends IPv4 ? IPv4Range : IPv6Range> {
 	if (address instanceof IPv4) {
 		for (const [ rangeName, rangeSubnets ] of rangeList) {
 			for (const subnet of rangeSubnets) {
