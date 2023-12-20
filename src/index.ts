@@ -1,5 +1,4 @@
-/* eslint-disable regexp/no-trivially-nested-quantifier,
-	unicorn/throw-new-error, @typescript-eslint/ban-types, unicorn/prefer-spread, prefer-named-capture-group,
+/* eslint-disable unicorn/throw-new-error, @typescript-eslint/ban-types, unicorn/prefer-spread, prefer-named-capture-group,
 	regexp/no-unused-capturing-group, radix, unicorn/prevent-abbreviations */
 export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved"
 export type IPv4Range = IPvXRangeDefaults | "broadcast" | "carrierGradeNat" | "private"
@@ -39,7 +38,7 @@ const ipv6Regexes = {
 	zoneIndex: /%[\da-z]+/i,
 	native: /^(::)?((?:[\da-f]+::?)+)?([\da-f]+)?(::)?(%[\da-z]+)?$/i,
 	deprecatedTransitional: /^::((\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?)$/i,
-	transitional: /^((?:[\da-f]+::?)+|::(?:(?:[\da-f]+::?)+)?)(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?$/i
+	transitional: /^((?:[\da-f]+::?)+|::(?:[\da-f]+::?)*)(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?$/i
 }
 
 // Expand :: in an IPv6 address or address part consisting of `parts` groups.
