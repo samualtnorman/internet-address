@@ -1,4 +1,4 @@
-import { IPv4, type IPv4Range } from "./IPv4"
+import { IPv4 } from "."
 import { IPv6, type IPv6Range } from "./IPv6"
 
 export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved"
@@ -6,13 +6,13 @@ export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkL
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type StringSuggest<T> = (string & {}) | T
 
-export type RangeList<T extends IPv4 | IPv6> = Map<StringSuggest<T extends IPv4 ? IPv4Range : IPv6Range>, CIDR<T>[]>
+export type RangeList<T extends IPv4 | IPv6> = Map<StringSuggest<T extends IPv4 ? IPv4.Range : IPv6Range>, CIDR<T>[]>
 
 export class CIDR<IP extends IPv4 | IPv6> {
 	constructor(public ip: IP, public bits: number) {}
 
 	toString() {
-		return `${this.ip}/${this.bits}`
+		return `${IPv4.is(this.ip) ? IPv4.toString(this.ip) : this.ip.toString()}/${this.bits}`
 	}
 }
 
@@ -39,12 +39,12 @@ export function matchCIDR(first: { [index: number]: number, length: number }, se
 export function subnetMatch<T extends IPv4 | IPv6>(
 	address: T,
 	rangeList: RangeList<T>,
-	defaultName: StringSuggest<T extends IPv4 ? IPv4Range : IPv6Range> = `unicast`
-): StringSuggest<T extends IPv4 ? IPv4Range : IPv6Range> {
-	if (address instanceof IPv4) {
+	defaultName: StringSuggest<T extends IPv4 ? IPv4.Range : IPv6Range> = `unicast`
+): StringSuggest<T extends IPv4 ? IPv4.Range : IPv6Range> {
+	if (IPv4.is(address)) {
 		for (const [ rangeName, rangeSubnets ] of rangeList) {
 			for (const subnet of rangeSubnets) {
-				if (subnet.ip instanceof IPv4 && address.match(subnet.ip, subnet.bits))
+				if (IPv4.is(subnet.ip) && IPv4.match(address, subnet.ip, subnet.bits))
 					return rangeName
 			}
 		}

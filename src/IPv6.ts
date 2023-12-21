@@ -1,4 +1,4 @@
-import { IPv4 } from "./IPv4"
+import { IPv4 } from "."
 import { CIDR, matchCIDR, subnetMatch, type IPvXRangeDefaults, type RangeList, type StringSuggest } from "./common"
 
 export type IPv6Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo"

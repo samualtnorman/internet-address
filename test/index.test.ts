@@ -1,26 +1,26 @@
 import { describe, expect, test } from "vitest"
-import { process } from "../src"
-import { IPv4 } from "../src/IPv4"
+import { IPv4, process } from "../src"
 import { IPv6 } from "../src/IPv6"
 import { CIDR, RangeList, subnetMatch } from "../src/common"
 
+// TODO fix name
 describe("new IPv4()", () => {
 	const u8View = new Uint8Array([ 167, 162, 196, 35 ])
 
-	expect(new IPv4(u8View).octets).toBe(u8View)
+	expect(IPv4.fromUint8Array(u8View)).toBe(u8View)
 
 	test("reject invalid Uint8Array", () =>
-		expect(() => new IPv4(new Uint8Array([ 73, 81, 19, 189, 70 ]))).toThrow(Error)
+		expect(() => IPv4.fromUint8Array(new Uint8Array([ 73, 81, 19, 189, 70 ]))).toThrow(Error)
 	)
 })
 
 test("IPv4.fromBytes()", () =>
-	expect(IPv4.fromBytes(149, 187, 3, 11).octets).toStrictEqual(new Uint8Array([ 149, 187, 3, 11 ]))
+	expect(IPv4.fromBytes(149, 187, 3, 11)).toStrictEqual(new Uint8Array([ 149, 187, 3, 11 ]))
 )
 
 test("IPv4.prototype.toString()", () => {
-	expect((IPv4.fromBytes(143, 196, 224, 197)).toString()).toBe("143.196.224.197")
-	expect((IPv4.fromBytes(40, 50, 136, 232)).toString()).toBe("40.50.136.232")
+	expect(IPv4.toString(IPv4.fromBytes(143, 196, 224, 197))).toBe("143.196.224.197")
+	expect(IPv4.toString(IPv4.fromBytes(40, 50, 136, 232))).toBe("40.50.136.232")
 })
 
 test("IPv4.parseCIDR()", () =>
@@ -71,16 +71,16 @@ describe("IPv4.parse()", () => {
 test("IPv4.prototype.match()", () => {
 	const address = IPv4.fromBytes(10, 5, 0, 1)
 
-	expect(address.match(IPv4.fromBytes(0, 0, 0, 0), 0)).toBe(true)
-	expect(address.match(IPv4.fromBytes(11, 0, 0, 0), 8)).toBe(false)
-	expect(address.match(IPv4.fromBytes(10, 0, 0, 0), 8)).toBe(true)
-	expect(address.match(IPv4.fromBytes(10, 0, 0, 1), 8)).toBe(true)
-	expect(address.match(IPv4.fromBytes(10, 0, 0, 10), 8)).toBe(true)
-	expect(address.match(IPv4.fromBytes(10, 5, 5, 0), 16)).toBe(true)
-	expect(address.match(IPv4.fromBytes(10, 4, 5, 0), 16)).toBe(false)
-	expect(address.match(IPv4.fromBytes(10, 4, 5, 0), 15)).toBe(true)
-	expect(address.match(IPv4.fromBytes(10, 5, 0, 2), 32)).toBe(false)
-	expect(address.match(address, 32)).toBe(true)
+	expect(IPv4.match(address, IPv4.fromBytes(0, 0, 0, 0), 0)).toBe(true)
+	expect(IPv4.match(address, IPv4.fromBytes(11, 0, 0, 0), 8)).toBe(false)
+	expect(IPv4.match(address, IPv4.fromBytes(10, 0, 0, 0), 8)).toBe(true)
+	expect(IPv4.match(address, IPv4.fromBytes(10, 0, 0, 1), 8)).toBe(true)
+	expect(IPv4.match(address, IPv4.fromBytes(10, 0, 0, 10), 8)).toBe(true)
+	expect(IPv4.match(address, IPv4.fromBytes(10, 5, 5, 0), 16)).toBe(true)
+	expect(IPv4.match(address, IPv4.fromBytes(10, 4, 5, 0), 16)).toBe(false)
+	expect(IPv4.match(address, IPv4.fromBytes(10, 4, 5, 0), 15)).toBe(true)
+	expect(IPv4.match(address, IPv4.fromBytes(10, 5, 0, 2), 32)).toBe(false)
+	expect(IPv4.match(address, address, 32)).toBe(true)
 })
 
 // TODO move stuff here
@@ -94,35 +94,35 @@ test("parseCIDR()", () => {
 test("IPv4.parseCIDR()", () => {
 	const address = IPv4.fromBytes(10, 5, 0, 1)
 
-	expect(address.matchCIDR(IPv4.parseCIDR("0.0.0.0/0"))).toBe(true)
-	expect(address.matchCIDR(IPv4.parseCIDR("11.0.0.0/8"))).toBe(false)
-	expect(address.matchCIDR(IPv4.parseCIDR("10.0.0.0/8"))).toBe(true)
-	expect(address.matchCIDR(IPv4.parseCIDR("10.0.0.1/8"))).toBe(true)
-	expect(address.matchCIDR(IPv4.parseCIDR("10.0.0.10/8"))).toBe(true)
-	expect(address.matchCIDR(IPv4.parseCIDR("10.0.0.10/8"))).toBe(true)
-	expect(address.matchCIDR(IPv4.parseCIDR("10.5.5.0/16"))).toBe(true)
-	expect(address.matchCIDR(IPv4.parseCIDR("10.4.5.0/16"))).toBe(false)
-	expect(address.matchCIDR(IPv4.parseCIDR("10.4.5.0/15"))).toBe(true)
-	expect(address.matchCIDR(IPv4.parseCIDR("10.5.0.2/32"))).toBe(false)
-	expect(address.matchCIDR(IPv4.parseCIDR("10.5.0.1/32"))).toBe(true)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("0.0.0.0/0"))).toBe(true)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("11.0.0.0/8"))).toBe(false)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("10.0.0.0/8"))).toBe(true)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("10.0.0.1/8"))).toBe(true)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("10.0.0.10/8"))).toBe(true)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("10.0.0.10/8"))).toBe(true)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("10.5.5.0/16"))).toBe(true)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("10.4.5.0/16"))).toBe(false)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("10.4.5.0/15"))).toBe(true)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("10.5.0.2/32"))).toBe(false)
+	expect(IPv4.matchCIDR(address, IPv4.parseCIDR("10.5.0.1/32"))).toBe(true)
 	expect(IPv4.parseCIDR("10.5.0.1")).toBeUndefined()
 	expect(IPv4.parseCIDR("0.0.0.0/-1")).toBeUndefined()
 	expect(IPv4.parseCIDR("0.0.0.0/33")).toBeUndefined()
 })
 
 test("IPv4.prototype.range()", () => {
-	expect(IPv4.fromBytes(0, 0, 0, 0).range()).toBe("unspecified")
-	expect(IPv4.fromBytes(0, 1, 0, 0).range()).toBe("unspecified")
-	expect(IPv4.fromBytes(10, 1, 0, 1).range()).toBe("private")
-	expect(IPv4.fromBytes(100, 64, 0, 0).range()).toBe("carrierGradeNat")
-	expect(IPv4.fromBytes(100, 127, 255, 255).range()).toBe("carrierGradeNat")
-	expect(IPv4.fromBytes(192, 168, 2, 1).range()).toBe("private")
-	expect(IPv4.fromBytes(224, 100, 0, 1).range()).toBe("multicast")
-	expect(IPv4.fromBytes(169, 254, 15, 0).range()).toBe("linkLocal")
-	expect(IPv4.fromBytes(127, 1, 1, 1).range()).toBe("loopback")
-	expect(IPv4.fromBytes(255, 255, 255, 255).range()).toBe("broadcast")
-	expect(IPv4.fromBytes(240, 1, 2, 3).range()).toBe("reserved")
-	expect(IPv4.fromBytes(8, 8, 8, 8).range()).toBe("unicast")
+	expect(IPv4.range(IPv4.fromBytes(0, 0, 0, 0))).toBe("unspecified")
+	expect(IPv4.range(IPv4.fromBytes(0, 1, 0, 0))).toBe("unspecified")
+	expect(IPv4.range(IPv4.fromBytes(10, 1, 0, 1))).toBe("private")
+	expect(IPv4.range(IPv4.fromBytes(100, 64, 0, 0))).toBe("carrierGradeNat")
+	expect(IPv4.range(IPv4.fromBytes(100, 127, 255, 255))).toBe("carrierGradeNat")
+	expect(IPv4.range(IPv4.fromBytes(192, 168, 2, 1))).toBe("private")
+	expect(IPv4.range(IPv4.fromBytes(224, 100, 0, 1))).toBe("multicast")
+	expect(IPv4.range(IPv4.fromBytes(169, 254, 15, 0))).toBe("linkLocal")
+	expect(IPv4.range(IPv4.fromBytes(127, 1, 1, 1))).toBe("loopback")
+	expect(IPv4.range(IPv4.fromBytes(255, 255, 255, 255))).toBe("broadcast")
+	expect(IPv4.range(IPv4.fromBytes(240, 1, 2, 3))).toBe("reserved")
+	expect(IPv4.range(IPv4.fromBytes(8, 8, 8, 8))).toBe("unicast")
 })
 
 describe("IPv4.isValidFourPartDecimal()", () => {
@@ -248,10 +248,10 @@ test("IPv6.prototype.toRFC5952String()", () => {
 test("IPv6.isIPv6()", () => {
 	expect(IPv6.parse("2001:db8:F53A::1")).toStrictEqual(IPv6.fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1))
 	expect(IPv6.parse("200001::1")).toBeUndefined()
-	expect(IPv6.parse("::ffff:192.168.1.1")).toStrictEqual(IPv4.fromBytes(192, 168, 1, 1).toIPv4MappedAddress())
-	expect(IPv6.parse("::ffff:192.168.1.1%z")).toStrictEqual(IPv4.fromBytes(192, 168, 1, 1).toIPv4MappedAddress("z"))
-	expect(IPv6.parse("::10.2.3.4")).toStrictEqual(IPv4.fromBytes(10, 2, 3, 4).toIPv4MappedAddress())
-	expect(IPv6.parse("::12.34.56.78%z")).toStrictEqual(IPv4.fromBytes(12, 34, 56, 78).toIPv4MappedAddress("z"))
+	expect(IPv6.parse("::ffff:192.168.1.1")).toStrictEqual(IPv4.toIPv4MappedAddress(IPv4.fromBytes(192, 168, 1, 1)))
+	expect(IPv6.parse("::ffff:192.168.1.1%z")).toStrictEqual(IPv4.toIPv4MappedAddress(IPv4.fromBytes(192, 168, 1, 1), "z"))
+	expect(IPv6.parse("::10.2.3.4")).toStrictEqual(IPv4.toIPv4MappedAddress(IPv4.fromBytes(10, 2, 3, 4)))
+	expect(IPv6.parse("::12.34.56.78%z")).toStrictEqual(IPv4.toIPv4MappedAddress(IPv4.fromBytes(12, 34, 56, 78), "z"))
 	expect(IPv6.parse("::ffff:300.168.1.1")).toBeUndefined()
 	expect(IPv6.parse("::ffff:300.168.1.1:0")).toBeUndefined()
 	expect(IPv6.parse("fe80::foo")).toBeUndefined()
@@ -262,10 +262,10 @@ test("IPv6.isIPv6()", () => {
 test("IPv6.isValid()", () => {
 	expect(IPv6.parse("2001:db8:F53A::1")).toStrictEqual(IPv6.fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1))
 	expect(IPv6.parse("200001::1")).toBeUndefined()
-	expect(IPv6.parse("::ffff:192.168.1.1")).toStrictEqual(IPv4.fromBytes(192, 168, 1, 1).toIPv4MappedAddress())
-	expect(IPv6.parse("::ffff:192.168.1.1%z")).toStrictEqual(IPv4.fromBytes(192, 168, 1, 1).toIPv4MappedAddress("z"))
-	expect(IPv6.parse("::1.1.1.1")).toStrictEqual(IPv4.fromBytes(1, 1, 1, 1).toIPv4MappedAddress())
-	expect(IPv6.parse("::1.2.3.4%z")).toStrictEqual(IPv4.fromBytes(1, 2, 3, 4).toIPv4MappedAddress("z"))
+	expect(IPv6.parse("::ffff:192.168.1.1")).toStrictEqual(IPv4.toIPv4MappedAddress(IPv4.fromBytes(192, 168, 1, 1)))
+	expect(IPv6.parse("::ffff:192.168.1.1%z")).toStrictEqual(IPv4.toIPv4MappedAddress(IPv4.fromBytes(192, 168, 1, 1), "z"))
+	expect(IPv6.parse("::1.1.1.1")).toStrictEqual(IPv4.toIPv4MappedAddress(IPv4.fromBytes(1, 1, 1, 1)))
+	expect(IPv6.parse("::1.2.3.4%z")).toStrictEqual(IPv4.toIPv4MappedAddress(IPv4.fromBytes(1, 2, 3, 4), "z"))
 	expect(IPv6.parse("::ffff:300.168.1.1")).toBeUndefined()
 	expect(IPv6.parse("::ffff:300.168.1.1:0")).toBeUndefined()
 	expect(IPv6.parse("::ffff:222.1.41.9000")).toBeUndefined()
@@ -324,10 +324,10 @@ test("IPv6.parseCIDR()", () => {
 
 test("IPv4.prototype.toIPv4MappedAddress()", () => {
 	const address = IPv4.parse("77.88.21.11")
-	const mappedAddress = address.toIPv4MappedAddress()
+	const mappedAddress = IPv4.toIPv4MappedAddress(address)
 
 	expect(mappedAddress.hextets).toStrictEqual(new Uint16Array([ 0, 0, 0, 0, 0, 0xFF_FF, 0x4D_58, 0x15_0B ]))
-	expect(mappedAddress.toIPv4Address().octets).toStrictEqual(address.octets)
+	expect(mappedAddress.toIPv4Address()).toStrictEqual(address)
 })
 
 test("IPv6.prototype.toIPv4Address()", () => {
@@ -355,11 +355,11 @@ test("IPv6.prototype.range()", () => {
 })
 
 test("process()", () => {
-	expect(process("8.8.8.8")).toBeInstanceOf(IPv4)
+	expect(IPv4.is(process("8.8.8.8"))).toBe(true)
 	expect(process("2001:db8:3312::1")).toBeInstanceOf(IPv6)
-	expect(process("::ffff:192.168.1.1")).toBeInstanceOf(IPv4)
-	expect(process("::ffff:192.168.1.1%z")).toBeInstanceOf(IPv4)
-	expect(process("::8.8.8.8")).toBeInstanceOf(IPv4)
+	expect(IPv4.is(process("::ffff:192.168.1.1"))).toBe(true)
+	expect(IPv4.is(process("::ffff:192.168.1.1%z"))).toBe(true)
+	expect(IPv4.is(process("::8.8.8.8"))).toBe(true)
 })
 
 // TODO do somethign with this
@@ -399,41 +399,41 @@ test("subnetMatch()", () => {
 })
 
 test("IPv4.prototype.prefixLengthFromSubnetMask()", () => {
-	expect(IPv4.parse("255.255.255.255").prefixLengthFromSubnetMask()).toBe(32)
-	expect(IPv4.parse("255.255.255.254").prefixLengthFromSubnetMask()).toBe(31)
-	expect(IPv4.parse("255.255.255.252").prefixLengthFromSubnetMask()).toBe(30)
-	expect(IPv4.parse("255.255.255.248").prefixLengthFromSubnetMask()).toBe(29)
-	expect(IPv4.parse("255.255.255.240").prefixLengthFromSubnetMask()).toBe(28)
-	expect(IPv4.parse("255.255.255.224").prefixLengthFromSubnetMask()).toBe(27)
-	expect(IPv4.parse("255.255.255.192").prefixLengthFromSubnetMask()).toBe(26)
-	expect(IPv4.parse("255.255.255.128").prefixLengthFromSubnetMask()).toBe(25)
-	expect(IPv4.parse("255.255.255.0").prefixLengthFromSubnetMask()).toBe(24)
-	expect(IPv4.parse("255.255.254.0").prefixLengthFromSubnetMask()).toBe(23)
-	expect(IPv4.parse("255.255.252.0").prefixLengthFromSubnetMask()).toBe(22)
-	expect(IPv4.parse("255.255.248.0").prefixLengthFromSubnetMask()).toBe(21)
-	expect(IPv4.parse("255.255.240.0").prefixLengthFromSubnetMask()).toBe(20)
-	expect(IPv4.parse("255.255.224.0").prefixLengthFromSubnetMask()).toBe(19)
-	expect(IPv4.parse("255.255.192.0").prefixLengthFromSubnetMask()).toBe(18)
-	expect(IPv4.parse("255.255.128.0").prefixLengthFromSubnetMask()).toBe(17)
-	expect(IPv4.parse("255.255.0.0").prefixLengthFromSubnetMask()).toBe(16)
-	expect(IPv4.parse("255.254.0.0").prefixLengthFromSubnetMask()).toBe(15)
-	expect(IPv4.parse("255.252.0.0").prefixLengthFromSubnetMask()).toBe(14)
-	expect(IPv4.parse("255.248.0.0").prefixLengthFromSubnetMask()).toBe(13)
-	expect(IPv4.parse("255.240.0.0").prefixLengthFromSubnetMask()).toBe(12)
-	expect(IPv4.parse("255.224.0.0").prefixLengthFromSubnetMask()).toBe(11)
-	expect(IPv4.parse("255.192.0.0").prefixLengthFromSubnetMask()).toBe(10)
-	expect(IPv4.parse("255.128.0.0").prefixLengthFromSubnetMask()).toBe(9)
-	expect(IPv4.parse("255.0.0.0").prefixLengthFromSubnetMask()).toBe(8)
-	expect(IPv4.parse("254.0.0.0").prefixLengthFromSubnetMask()).toBe(7)
-	expect(IPv4.parse("252.0.0.0").prefixLengthFromSubnetMask()).toBe(6)
-	expect(IPv4.parse("248.0.0.0").prefixLengthFromSubnetMask()).toBe(5)
-	expect(IPv4.parse("240.0.0.0").prefixLengthFromSubnetMask()).toBe(4)
-	expect(IPv4.parse("224.0.0.0").prefixLengthFromSubnetMask()).toBe(3)
-	expect(IPv4.parse("192.0.0.0").prefixLengthFromSubnetMask()).toBe(2)
-	expect(IPv4.parse("128.0.0.0").prefixLengthFromSubnetMask()).toBe(1)
-	expect(IPv4.parse("0.0.0.0").prefixLengthFromSubnetMask()).toBe(0)
-	expect(IPv4.parse("192.168.255.0").prefixLengthFromSubnetMask()).toBeUndefined()
-	expect(IPv4.parse("255.0.255.0").prefixLengthFromSubnetMask()).toBeUndefined()
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.255.255"))).toBe(32)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.255.254"))).toBe(31)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.255.252"))).toBe(30)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.255.248"))).toBe(29)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.255.240"))).toBe(28)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.255.224"))).toBe(27)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.255.192"))).toBe(26)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.255.128"))).toBe(25)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.255.0"))).toBe(24)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.254.0"))).toBe(23)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.252.0"))).toBe(22)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.248.0"))).toBe(21)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.240.0"))).toBe(20)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.224.0"))).toBe(19)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.192.0"))).toBe(18)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.128.0"))).toBe(17)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.255.0.0"))).toBe(16)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.254.0.0"))).toBe(15)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.252.0.0"))).toBe(14)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.248.0.0"))).toBe(13)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.240.0.0"))).toBe(12)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.224.0.0"))).toBe(11)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.192.0.0"))).toBe(10)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.128.0.0"))).toBe(9)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.0.0.0"))).toBe(8)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("254.0.0.0"))).toBe(7)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("252.0.0.0"))).toBe(6)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("248.0.0.0"))).toBe(5)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("240.0.0.0"))).toBe(4)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("224.0.0.0"))).toBe(3)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("192.0.0.0"))).toBe(2)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("128.0.0.0"))).toBe(1)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("0.0.0.0"))).toBe(0)
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("192.168.255.0"))).toBeUndefined()
+	expect(IPv4.prefixLengthFromSubnetMask(IPv4.parse("255.0.255.0"))).toBeUndefined()
 })
 
 test("IPv6.prototype.prefixLengthFromSubnetMask()", () => {
