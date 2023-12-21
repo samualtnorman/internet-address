@@ -36,7 +36,7 @@ test("IPv4.parseCIDR().toString()", () =>
 
 describe("IPv4.isIPv4()", () => {
 	expect(IPv4.isIPv4("242.41.0247.0x23")).toBe(true)
-	test("accept invalid IPv4", () => expect(IPv4.isIPv4("256.229.119.175")).toBe(true))
+	test("accept invalid IPv4", () => expect(IPv4.isIPv4("256.229.119.175")).toBe(false))
 	test("detect non-IPv4 string", () => expect(IPv4.isIPv4("202.0x5A.foo.234")).toBe(false))
 })
 

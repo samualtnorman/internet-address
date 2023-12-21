@@ -68,7 +68,7 @@ export class IPv4 {
 
 	/** Checks if a given string is a valid IPv4 address. */
 	static isValid(address: string): boolean {
-		return Boolean((this.parser(address))?.every(part => part >= 0 && part <= 0xFF))
+		return Boolean(this.parser(address))
 	}
 
 	/** Checks if a given string is a full four-part IPv4 Address. */
@@ -92,10 +92,7 @@ export class IPv4 {
 
 	/** @returns Parsed IPv4 address or `undefined` if invalid. */
 	static parse(addr: string): IPv4 | undefined {
-		const parts = this.parser(addr)
-
-		if (parts)
-			return this.fromBytes(...parts)
+		return this.parser(addr)
 	}
 
 	/** Parses the string as an IPv4 Address with CIDR Notation. */
@@ -117,33 +114,35 @@ export class IPv4 {
 	/** Classful variants (like a.b, where a is an octet, and b is a 24-bit
 	  * value representing last three octets; this corresponds to a class C
 	  * address) are omitted due to classless nature of modern Internet. */
-	static parser(string: string): [ number, number, number, number ] | undefined {
+	static parser(string: string): IPv4 | undefined {
 		let match
 
 		// parseInt recognizes all that octal & hexadecimal weirdness for us
 		if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
-			const result: [ number, number, number, number ] = [
+			const bytes: [ number, number, number, number ] = [
 				parseIntAuto(match[1]!),
 				parseIntAuto(match[2]!),
 				parseIntAuto(match[3]!),
 				parseIntAuto(match[4]!)
 			]
 
-			if (result.every(byte => !isNaN(byte)))
-				return result
+			if (bytes.every(byte => !isNaN(byte) && byte >= 0 && byte <= 0xFF))
+				return IPv4.fromBytes(...bytes)
 		} else if ((match = /^(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const value = parseIntAuto(match[1]!)
 
 			if (!isNaN(value) && value <= 0xFF_FF_FF_FF && value >= 0)
-				return [ (value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF ]
+				return IPv4.fromBytes((value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF)
 		} else if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const firstOctet = parseIntAuto(match[1]!)
 			const lastOctets = parseIntAuto(match[2]!)
 
 			if (!isNaN(firstOctet) && !isNaN(lastOctets) && firstOctet <= 0xFF && firstOctet >= 0 &&
 				lastOctets <= 0xFF_FF_FF && lastOctets >= 0
-			)
-				return [ firstOctet, (lastOctets >> 16) & 0xFF, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF ]
+			) {
+				return IPv4
+					.fromBytes(firstOctet, (lastOctets >> 16) & 0xFF, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF)
+			}
 		} else if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
 			const firstOctet = parseIntAuto(match[1]!)
 			const secondOctet = parseIntAuto(match[2]!)
@@ -153,7 +152,7 @@ export class IPv4 {
 				firstOctet <= 0xFF && firstOctet >= 0 && secondOctet <= 0xFF &&
 				secondOctet >= 0 && lastOctets <= 0xFF_FF && lastOctets >= 0
 			)
-				return [ firstOctet, secondOctet, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF ]
+				return IPv4.fromBytes(firstOctet, secondOctet, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF)
 		}
 	}
 
