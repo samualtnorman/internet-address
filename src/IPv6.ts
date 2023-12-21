@@ -4,32 +4,6 @@ import { CIDR, matchCIDR, subnetMatch, type IPvXRangeDefaults, type RangeList, t
 export type IPv6Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo"
 
 export class IPv6 {
-	/** Special IPv6 ranges */
-	static SpecialRanges: RangeList<IPv6> = new Map([
-		// RFC4291, here and after
-		[ `unspecified`, [ { ip: this.fromHextets(0, 0, 0, 0, 0, 0, 0, 0), bits: 128 } ] ],
-		[ `linkLocal`, [ { ip: this.fromHextets(0xFE_80, 0, 0, 0, 0, 0, 0, 0), bits: 10 } ] ],
-		[ `multicast`, [ { ip: this.fromHextets(0xFF_00, 0, 0, 0, 0, 0, 0, 0), bits: 8 } ] ],
-		[ `loopback`, [ { ip: this.fromHextets(0, 0, 0, 0, 0, 0, 0, 1), bits: 128 } ] ],
-		[ `uniqueLocal`, [ { ip: this.fromHextets(0xFC_00, 0, 0, 0, 0, 0, 0, 0), bits: 7 } ] ],
-		[ `ipv4Mapped`, [ { ip: this.fromHextets(0, 0, 0, 0, 0, 0xFF_FF, 0, 0), bits: 96 } ] ],
-		// RFC6145
-		[ `rfc6145`, [ { ip: this.fromHextets(0, 0, 0, 0, 0xFF_FF, 0, 0, 0), bits: 96 } ] ],
-		// RFC6052
-		[ `rfc6052`, [ { ip: this.fromHextets(0x64, 0xFF_9B, 0, 0, 0, 0, 0, 0), bits: 96 } ] ],
-		// RFC3056
-		[ `6to4`, [ { ip: this.fromHextets(0x20_02, 0, 0, 0, 0, 0, 0, 0), bits: 16 } ] ],
-		// RFC6052, RFC6146
-		[ `teredo`, [ { ip: this.fromHextets(0x20_01, 0, 0, 0, 0, 0, 0, 0), bits: 32 } ] ],
-		// RFC4291
-		[ `reserved`, [ { ip: this.fromHextets(0x20_01, 0xD_B8, 0, 0, 0, 0, 0, 0), bits: 32 } ] ],
-		[ `benchmarking`, [ { ip: this.fromHextets(0x20_01, 0x2, 0, 0, 0, 0, 0, 0), bits: 48 } ] ],
-		[ `amt`, [ { ip: this.fromHextets(0x20_01, 0x3, 0, 0, 0, 0, 0, 0), bits: 32 } ] ],
-		[ `as112v6`, [ { ip: this.fromHextets(0x20_01, 0x4, 0x1_12, 0, 0, 0, 0, 0), bits: 48 } ] ],
-		[ `deprecated`, [ { ip: this.fromHextets(0x20_01, 0x10, 0, 0, 0, 0, 0, 0), bits: 28 } ] ],
-		[ `orchid2`, [ { ip: this.fromHextets(0x20_01, 0x20, 0, 0, 0, 0, 0, 0), bits: 28 } ] ]
-	])
-
 	constructor(
 		/** 8 big-endian 16-bit unsigned integers */ public readonly hextets: Uint16Array,
 		public zoneId?: string
@@ -73,16 +47,6 @@ export class IPv6 {
 		}
 	}
 
-	/** Checks if a given string is formatted like IPv6 address. */
-	static isIPv6(address: string): boolean {
-		return Boolean(this.parser(address))
-	}
-
-	/** Checks to see if string is a valid IPv6 Address. */
-	static isValid(address: string): boolean {
-		return address.includes(`:`) && Boolean(this.parser(address))
-	}
-
 	/** @returns Network address from parsed CIDR or `undefined` if invalid CIDR string */
 	static networkAddressFromCIDR(address: string): IPv6 | undefined {
 		const cidr = this.parseCIDR(address)
@@ -97,11 +61,6 @@ export class IPv6 {
 
 			return cidr.ip
 		}
-	}
-
-	/** @returns Parsed IPv6 or `undefined` if invalid. */
-	static parse(addr: string): IPv6 | undefined {
-		return this.parser(addr)
 	}
 
 	/** @returns parsed `CIDR` or `undefined` if invalid */
@@ -120,14 +79,17 @@ export class IPv6 {
 		}
 	}
 
-	/** Parse an IPv6 address. */
-	static parser(string: string): IPv6 | undefined {
+	/** @returns Parsed IPv6 or `undefined` if invalid. */
+	static parse(string: string): IPv6 | undefined {
+		if (!string.includes(`:`))
+			return
+
 		let match
 
 		if ((match =
 			/^::((\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)(%[\da-z]+)?)$/i.exec(string))
 		)
-			return this.parser(`::FFFF:${match[1]}`)
+			return this.parse(`::FFFF:${match[1]}`)
 
 		if (/^(?:::)?(?:[\da-f]+::?)*[\da-f]*(?:::)?(?:%[\da-z]+)?$/i.test(string))
 			return expandIPv6(string)
@@ -228,18 +190,18 @@ export class IPv6 {
 
 	/** Checks if the address corresponds to one of the special ranges. */
 	range(): StringSuggest<IPv6Range> {
-		return subnetMatch(this, IPv6.SpecialRanges)
+		return subnetMatch(this, SpecialRanges)
 	}
 
-	/** @returns An array of byte-sized values in network order (MSB first). */
-	toByteArray(): Uint8Array {
-		const u8View = new Uint8Array(this.hextets.buffer)
+	// /** @returns An array of byte-sized values in network order (MSB first). */
+	// toByteArray(): Uint8Array {
+	// 	const u8View = new Uint8Array(this.hextets.buffer)
 
-		return new Uint8Array([
-			u8View[1]!, u8View[0]!, u8View[3]!, u8View[2]!, u8View[5]!, u8View[4]!, u8View[7]!, u8View[6]!, u8View[9]!,
-			u8View[8]!, u8View[11]!, u8View[10]!, u8View[13]!, u8View[12]!, u8View[15]!, u8View[14]!
-		])
-	}
+	// 	return new Uint8Array([
+	// 		u8View[1]!, u8View[0]!, u8View[3]!, u8View[2]!, u8View[5]!, u8View[4]!, u8View[7]!, u8View[6]!, u8View[9]!,
+	// 		u8View[8]!, u8View[11]!, u8View[10]!, u8View[13]!, u8View[12]!, u8View[15]!, u8View[14]!
+	// 	])
+	// }
 
 	/** Returns the address in expanded format with all zeros included, like
 	  * `2001:0db8:0008:0066:0000:0000:0000:0001`. */
@@ -266,7 +228,7 @@ export class IPv6 {
 
 	/** @returns The address in compact, human-readable format like `2001:db8:8:66::1` in line with RFC 5952.
 	  * @see https://tools.ietf.org/html/rfc5952#section-4 */
-	toRFC5952String(): string {
+	toString(): string {
 		const regex = /(?:^|:)(?:0(?::|$)){2,}/g
 		const string = this.toNormalizedString()
 		let bestMatchIndex = 0
@@ -285,11 +247,6 @@ export class IPv6 {
 
 		return `${string.slice(0, Math.max(0, bestMatchIndex))}::${
 			string.slice(Math.max(0, bestMatchIndex + bestMatchLength))}`
-	}
-
-	/** @returns The address in compact, human-readable format like `2001:db8:8:66::1`. */
-	toString(): string {
-		return this.toRFC5952String()
 	}
 }
 
@@ -336,3 +293,29 @@ function expandIPv6(string: string): IPv6 | undefined {
 		}
 	}
 }
+
+/** Special IPv6 ranges */
+const SpecialRanges: RangeList<IPv6> = new Map([
+	// RFC4291, here and after
+	[ `unspecified`, [ { ip: IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0, 0), bits: 128 } ] ],
+	[ `linkLocal`, [ { ip: IPv6.fromHextets(0xFE_80, 0, 0, 0, 0, 0, 0, 0), bits: 10 } ] ],
+	[ `multicast`, [ { ip: IPv6.fromHextets(0xFF_00, 0, 0, 0, 0, 0, 0, 0), bits: 8 } ] ],
+	[ `loopback`, [ { ip: IPv6.fromHextets(0, 0, 0, 0, 0, 0, 0, 1), bits: 128 } ] ],
+	[ `uniqueLocal`, [ { ip: IPv6.fromHextets(0xFC_00, 0, 0, 0, 0, 0, 0, 0), bits: 7 } ] ],
+	[ `ipv4Mapped`, [ { ip: IPv6.fromHextets(0, 0, 0, 0, 0, 0xFF_FF, 0, 0), bits: 96 } ] ],
+	// RFC6145
+	[ `rfc6145`, [ { ip: IPv6.fromHextets(0, 0, 0, 0, 0xFF_FF, 0, 0, 0), bits: 96 } ] ],
+	// RFC6052
+	[ `rfc6052`, [ { ip: IPv6.fromHextets(0x64, 0xFF_9B, 0, 0, 0, 0, 0, 0), bits: 96 } ] ],
+	// RFC3056
+	[ `6to4`, [ { ip: IPv6.fromHextets(0x20_02, 0, 0, 0, 0, 0, 0, 0), bits: 16 } ] ],
+	// RFC6052, RFC6146
+	[ `teredo`, [ { ip: IPv6.fromHextets(0x20_01, 0, 0, 0, 0, 0, 0, 0), bits: 32 } ] ],
+	// RFC4291
+	[ `reserved`, [ { ip: IPv6.fromHextets(0x20_01, 0xD_B8, 0, 0, 0, 0, 0, 0), bits: 32 } ] ],
+	[ `benchmarking`, [ { ip: IPv6.fromHextets(0x20_01, 0x2, 0, 0, 0, 0, 0, 0), bits: 48 } ] ],
+	[ `amt`, [ { ip: IPv6.fromHextets(0x20_01, 0x3, 0, 0, 0, 0, 0, 0), bits: 32 } ] ],
+	[ `as112v6`, [ { ip: IPv6.fromHextets(0x20_01, 0x4, 0x1_12, 0, 0, 0, 0, 0), bits: 48 } ] ],
+	[ `deprecated`, [ { ip: IPv6.fromHextets(0x20_01, 0x10, 0, 0, 0, 0, 0, 0), bits: 28 } ] ],
+	[ `orchid2`, [ { ip: IPv6.fromHextets(0x20_01, 0x20, 0, 0, 0, 0, 0, 0), bits: 28 } ] ]
+])

@@ -4,37 +4,6 @@ import { CIDR, matchCIDR, subnetMatch, type IPvXRangeDefaults, type RangeList, t
 export type IPv4Range = IPvXRangeDefaults | "broadcast" | "carrierGradeNat" | "private"
 
 export class IPv4 {
-	/** Special IPv4 address ranges.
-	  * @see https://en.wikipedia.org/wiki/Reserved_IP_addresses */
-	static SpecialRanges: RangeList<IPv4> = new Map([
-		[ `unspecified`, [ { ip: IPv4.fromBytes(0, 0, 0, 0), bits: 8 } ] ],
-		[ `broadcast`, [ { ip: IPv4.fromBytes(255, 255, 255, 255), bits: 32 } ] ],
-		// RFC3171
-		[ `multicast`, [ { ip: IPv4.fromBytes(224, 0, 0, 0), bits: 4 } ] ],
-		// RFC3927
-		[ `linkLocal`, [ { ip: IPv4.fromBytes(169, 254, 0, 0), bits: 16 } ] ],
-		// RFC5735
-		[ `loopback`, [ { ip: IPv4.fromBytes(127, 0, 0, 0), bits: 8 } ] ],
-		// RFC6598
-		[ `carrierGradeNat`, [ { ip: IPv4.fromBytes(100, 64, 0, 0), bits: 10 } ] ],
-		// RFC1918
-		[ `private`, [
-			{ ip: IPv4.fromBytes(10, 0, 0, 0), bits: 8 },
-			{ ip: IPv4.fromBytes(172, 16, 0, 0), bits: 12 },
-			{ ip: IPv4.fromBytes(192, 168, 0, 0), bits: 16 }
-		] ],
-		// Reserved and testing-only ranges; RFCs 5735, 5737, 2544, 1700
-		[ `reserved`, [
-			{ ip: IPv4.fromBytes(192, 0, 0, 0), bits: 24 },
-			{ ip: IPv4.fromBytes(192, 0, 2, 0), bits: 24 },
-			{ ip: IPv4.fromBytes(192, 88, 99, 0), bits: 24 },
-			{ ip: IPv4.fromBytes(198, 18, 0, 0), bits: 15 },
-			{ ip: IPv4.fromBytes(198, 51, 100, 0), bits: 24 },
-			{ ip: IPv4.fromBytes(203, 0, 113, 0), bits: 24 },
-			{ ip: IPv4.fromBytes(240, 0, 0, 0), bits: 4 }
-		] ]
-	])
-
 	/** Constructs a new IPv4 address from an array of four octets
 	  * in network order (MSB first)
 	  * Verifies the input. */
@@ -61,19 +30,9 @@ export class IPv4 {
 		}
 	}
 
-	/** Checks if a given string is formatted like IPv4 address. */
-	static isIPv4(address: string): boolean {
-		return Boolean(this.parser(address))
-	}
-
-	/** Checks if a given string is a valid IPv4 address. */
-	static isValid(address: string): boolean {
-		return Boolean(this.parser(address))
-	}
-
 	/** Checks if a given string is a full four-part IPv4 Address. */
 	static isValidFourPartDecimal(addr: string): boolean {
-		return IPv4.isValid(addr) && Boolean(/^(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){3}$/.test(addr))
+		return Boolean(IPv4.parse(addr) && /^(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){3}$/.test(addr))
 	}
 
 	/** @returns Network address from CIDR or `undefined` if invalid. */
@@ -88,11 +47,6 @@ export class IPv4 {
 
 			return cidr.ip
 		}
-	}
-
-	/** @returns Parsed IPv4 address or `undefined` if invalid. */
-	static parse(addr: string): IPv4 | undefined {
-		return this.parser(addr)
 	}
 
 	/** Parses the string as an IPv4 Address with CIDR Notation. */
@@ -111,10 +65,8 @@ export class IPv4 {
 		}
 	}
 
-	/** Classful variants (like a.b, where a is an octet, and b is a 24-bit
-	  * value representing last three octets; this corresponds to a class C
-	  * address) are omitted due to classless nature of modern Internet. */
-	static parser(string: string): IPv4 | undefined {
+	/** @returns Parsed IPv4 address or `undefined` if invalid. */
+	static parse(string: string): IPv4 | undefined {
 		let match
 
 		// parseInt recognizes all that octal & hexadecimal weirdness for us
@@ -206,24 +158,15 @@ export class IPv4 {
 
 	/** Checks if the address corresponds to one of the special ranges. */
 	range(): StringSuggest<IPv4Range> {
-		return subnetMatch(this, IPv4.SpecialRanges)
-	}
-
-	/** @returns An array of byte-sized values in network order (MSB first) */
-	toByteArray(): Uint8Array {
-		return this.octets.slice()
+		return subnetMatch(this, SpecialRanges)
 	}
 
 	/** Converts this IPv4 address to an IPv4-mapped IPv6 address. */
-	toIPv4MappedAddress(): IPv6 {
+	toIPv4MappedAddress(zoneId?: string): IPv6 {
 		return IPv6.fromBytes(
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, ...this.octets as any as [ number, number, number, number ]
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, ...this.octets as any as [ number, number, number, number ],
+			zoneId
 		)
-	}
-
-	/** Symmetrical method strictly for aligning with the IPv6 methods. */
-	toNormalizedString(): string {
-		return this.toString()
 	}
 
 	/** @returns The address in convenient, decimal-dotted format. */
@@ -250,3 +193,34 @@ function parseIntAuto(string: string): number {
 	// Always include the base 10 radix!
 	return parseInt(string, 10)
 }
+
+/** Special IPv4 address ranges.
+  * @see https://en.wikipedia.org/wiki/Reserved_IP_addresses */
+const SpecialRanges: RangeList<IPv4> = new Map([
+	[ `unspecified`, [ { ip: IPv4.fromBytes(0, 0, 0, 0), bits: 8 } ] ],
+	[ `broadcast`, [ { ip: IPv4.fromBytes(255, 255, 255, 255), bits: 32 } ] ],
+	// RFC3171
+	[ `multicast`, [ { ip: IPv4.fromBytes(224, 0, 0, 0), bits: 4 } ] ],
+	// RFC3927
+	[ `linkLocal`, [ { ip: IPv4.fromBytes(169, 254, 0, 0), bits: 16 } ] ],
+	// RFC5735
+	[ `loopback`, [ { ip: IPv4.fromBytes(127, 0, 0, 0), bits: 8 } ] ],
+	// RFC6598
+	[ `carrierGradeNat`, [ { ip: IPv4.fromBytes(100, 64, 0, 0), bits: 10 } ] ],
+	// RFC1918
+	[ `private`, [
+		{ ip: IPv4.fromBytes(10, 0, 0, 0), bits: 8 },
+		{ ip: IPv4.fromBytes(172, 16, 0, 0), bits: 12 },
+		{ ip: IPv4.fromBytes(192, 168, 0, 0), bits: 16 }
+	] ],
+	// Reserved and testing-only ranges; RFCs 5735, 5737, 2544, 1700
+	[ `reserved`, [
+		{ ip: IPv4.fromBytes(192, 0, 0, 0), bits: 24 },
+		{ ip: IPv4.fromBytes(192, 0, 2, 0), bits: 24 },
+		{ ip: IPv4.fromBytes(192, 88, 99, 0), bits: 24 },
+		{ ip: IPv4.fromBytes(198, 18, 0, 0), bits: 15 },
+		{ ip: IPv4.fromBytes(198, 51, 100, 0), bits: 24 },
+		{ ip: IPv4.fromBytes(203, 0, 113, 0), bits: 24 },
+		{ ip: IPv4.fromBytes(240, 0, 0, 0), bits: 4 }
+	] ]
+])
