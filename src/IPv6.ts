@@ -306,9 +306,12 @@ function expandIPv6(string: string): IPv6 | undefined {
 		if ((left?.length ?? 0) + (right?.length ?? 0) < 9) {
 			if (left) {
 				for (const [ index, hextet ] of left.entries()) {
+					if (hextet.length > 4)
+						return
+
 					const parsedInt = parseInt(hextet, 16)
 
-					if (isNaN(parsedInt) || parsedInt < 0 || parsedInt > 0xFF_FF)
+					if (isNaN(parsedInt))
 						return
 
 					u16View[index] = parsedInt
@@ -317,9 +320,12 @@ function expandIPv6(string: string): IPv6 | undefined {
 
 			if (right) {
 				for (const [ index, hextet ] of right.entries()) {
+					if (hextet.length > 4)
+						return
+
 					const parsedInt = parseInt(hextet, 16)
 
-					if (isNaN(parsedInt) || parsedInt < 0 || parsedInt > 0xFF_FF)
+					if (isNaN(parsedInt))
 						return
 
 					u16View[(8 - right.length) + index] = parsedInt
