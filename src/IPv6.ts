@@ -1,5 +1,6 @@
-import { IPv4 } from "."
-import { CIDR, matchCIDR, subnetMatch, type IPvXRangeDefaults, type RangeList, type StringSuggest } from "./common"
+import { CIDR, subnetMatch, type RangeList } from "."
+import { matchCIDR, type IPvXRangeDefaults, type StringSuggest } from "./internal"
+import * as IPv4 from "./IPv4"
 
 export type IPv6Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo"
 
@@ -211,7 +212,7 @@ export class IPv6 {
 	}
 
 	/** @returns IPv4 address of IPv4-mapped IPv6 address or `undefined` if it is not. */
-	toIPv4Address(): IPv4 | undefined {
+	toIPv4Address(): IPv4.IPv4 | undefined {
 		if (this.isIPv4MappedAddress()) {
 			const u8View = new Uint8Array(this.hextets.buffer)
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
-import { IPv4, process } from "../src"
+import { CIDR, RangeList, process, subnetMatch } from "../src"
+import * as IPv4 from "../src/IPv4"
 import { IPv6 } from "../src/IPv6"
-import { CIDR, RangeList, subnetMatch } from "../src/common"
 
 // TODO fix name
 describe("new IPv4()", () => {
@@ -381,17 +381,17 @@ test("subnetMatch()", () => {
 	expect(subnetMatch(IPv4.fromBytes(1, 2, 3, 4), new Map, "foo")).toBe("foo")
 	expect(subnetMatch(IPv4.fromBytes(1, 2, 3, 4), new Map([ [ "subnet", [] ] ]), "bar")).toBe("bar")
 
-	expect(subnetMatch<IPv4 | IPv6>(
+	expect(subnetMatch<IPv4.IPv4 | IPv6>(
 		IPv4.fromBytes(1, 2, 3, 4), new Map([ [ "subnet6", [ IPv6.parseCIDR("fe80::/64") ] ] ]),
 		"foo"
 	)).toBe("foo")
 
-	expect(subnetMatch<IPv4 | IPv6>(
+	expect(subnetMatch<IPv4.IPv4 | IPv6>(
 		IPv6.fromHextets(0xFE_80, 0, 0, 0, 0, 0, 0, 1), new Map([ [ "subnet4", [ IPv4.parseCIDR("1.2.3.0/24") ] ] ]),
 		"foo"
 	)).toBe("foo")
 
-	const rangeList: RangeList<IPv4 | IPv6> =
+	const rangeList: RangeList<IPv4.IPv4 | IPv6> =
 		new Map([ [ "dual64", [ IPv4.parseCIDR("1.2.4.0/24"), IPv6.parseCIDR("2001:1:2:3::/64") ] ] ])
 
 	expect(subnetMatch(IPv4.fromBytes(1, 2, 4, 1), rangeList, "foo")).toBe("dual64")
