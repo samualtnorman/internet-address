@@ -34,4 +34,4 @@ import * as IPv4 from "."
 ])
 
 /** Checks if the address corresponds to one of the special ranges. */
-export const range = (address: IPv4): StringSuggest<Range> => subnetMatch(address, SpecialRanges)
+export const range = (address: IPv4.IPv4): StringSuggest<Range> => subnetMatch(address, SpecialRanges)
