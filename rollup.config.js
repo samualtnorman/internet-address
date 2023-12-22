@@ -29,7 +29,7 @@ export default findFiles(SourceFolder).then(foundFiles => /** @type {import("rol
 		strictDeprecations: true
 	},
 	{
-		input: { index: "src/index.ts", IPv4: "src/IPv4.ts", IPv6: "src/IPv6.ts" },
+		input: { index: "src/index.ts", IPv4: "src/IPv4/index.ts", IPv6: "src/IPv6.ts" },
 		output: { dir: "dist", generatedCode: "es2015", interop: "auto", compact: Minify },
 		plugins: [ dts() ],
 		preserveEntrySignatures: "allow-extension",

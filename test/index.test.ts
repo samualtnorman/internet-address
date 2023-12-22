@@ -1,7 +1,8 @@
 import { describe, expect, test } from "vitest"
-import { CIDR, RangeList, process, subnetMatch } from "../src"
+import { CIDR, RangeList, process } from "../src"
 import * as IPv4 from "../src/IPv4"
 import { IPv6 } from "../src/IPv6"
+import { subnetMatch } from "../src/subnetMatch"
 
 // TODO fix name
 describe("new IPv4()", () => {

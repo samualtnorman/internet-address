@@ -1,6 +1,7 @@
-import { CIDR, subnetMatch, type RangeList } from "."
+import { CIDR, type RangeList } from "."
 import { matchCIDR, type IPvXRangeDefaults, type StringSuggest } from "./internal"
 import * as IPv4 from "./IPv4"
+import { subnetMatch } from "./subnetMatch"
 
 export type IPv6Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo"
 
