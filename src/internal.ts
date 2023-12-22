@@ -4,7 +4,12 @@ export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkL
 export type StringSuggest<T> = (string & {}) | T
 
 /** A generic CIDR (Classless Inter-Domain Routing) RFC1518 range matcher. */
-export function matchCIDR(first: { [index: number]: number, length: number }, second: { [index: number]: number, length: number }, partSize: number, cidrBits: number) {
+export function matchCIDR(
+	first: { [index: number]: number, length: number },
+	second: { [index: number]: number, length: number },
+	partSize: number,
+	cidrBits: number
+) {
 	if (first.length != second.length)
 		throw Error(`Cannot match CIDR for objects with different lengths`)
 
