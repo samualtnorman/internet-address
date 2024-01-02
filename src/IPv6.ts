@@ -1,5 +1,5 @@
-import { Hextets } from "./IPv6/Hextets"
-import { IPvXRangeDefaults } from "./internal"
+import type { Hextets } from "./IPv6/Hextets"
+import type { IPvXRangeDefaults } from "./internal"
 
 export type Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo"
 
@@ -7,6 +7,7 @@ export type Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145"
 export type IPv6 = { hextets: Hextets, zoneId: string | undefined }
 
 export * as Hextets from "./IPv6/Hextets"
+
 export { broadcastAddressFromCIDR } from "./IPv6/broadcastAddressFromCIDR"
 export { fromBytes } from "./IPv6/fromBytes"
 export { fromHextets } from "./IPv6/fromHextets"
