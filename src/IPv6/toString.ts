@@ -1,11 +1,13 @@
 import type { IPv6 } from "../IPv6"
-import { toNormalizedString } from "./toNormalizedString"
 
 /** @returns The address in compact, human-readable format like `2001:db8:8:66::1` in line with RFC 5952.
   * @see https://tools.ietf.org/html/rfc5952#section-4 */
-  export function toString(ipv6: IPv6): string {
+export function toString(ipv6: IPv6): string {
 	const regex = /(?:^|:)(?:0(?::|$)){2,}/g
-	const string = toNormalizedString(ipv6)
+
+	const string =
+		`${[ ...ipv6.hextets ].map(hextet => hextet.toString(16)).join(`:`)}${ipv6.zoneId ? `%${ipv6.zoneId}` : ``}`
+
 	let bestMatchIndex = 0
 	let bestMatchLength = -1
 	let match

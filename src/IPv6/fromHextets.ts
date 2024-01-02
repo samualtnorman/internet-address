@@ -1,4 +1,4 @@
-import { IPv6 } from "../IPv6"
+import type { IPv6 } from "../IPv6"
 import * as Hextets from "./Hextets"
 
 /** @returns An {@link IPv6} object from a series of hextets and an optional {@link zoneId}. */

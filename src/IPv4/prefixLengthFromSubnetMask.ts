@@ -1,4 +1,4 @@
-import type { IPv4 } from "./common"
+import type { IPv4 } from "../IPv4"
 
 /** returns a number of leading ones in IPv4 address, making sure that the rest is a solid sequence of zeros
   * (valid netmask)

@@ -1,4 +1,4 @@
-import type { IPv4 } from "./common"
+import type { IPv4 } from "../IPv4"
 import { fromUint8Array } from "./fromUint8Array"
 
 export const fromBytes = (byte0: number, byte1: number, byte2: number, byte3: number): IPv4 =>

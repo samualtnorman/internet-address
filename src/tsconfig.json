@@ -8,7 +8,8 @@
 		"declaration": true,
 		"emitDeclarationOnly": true,
 		"noEmit": false,
-		"outDir": "../.dts"
+		"outDir": "../.dts",
+		"types": [ "vitest/importMeta" ]
 	},
 	"extends": "..",
 	"include": [ "**/*" ]

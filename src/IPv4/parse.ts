@@ -1,4 +1,4 @@
-import type { IPv4 } from "./common"
+import type { IPv4 } from "../IPv4"
 import { fromBytes } from "./fromBytes"
 
 /** @returns Parsed IPv4 address or `undefined` if invalid. */

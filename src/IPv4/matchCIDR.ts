@@ -1,5 +1,5 @@
-import type { CIDR } from ".."
-import type { IPv4 } from "./common"
+import type { CIDR } from "../CIDR"
+import type { IPv4 } from "../IPv4"
 import { match } from "./match"
 
-export const matchCIDR = (address: IPv4, cidr: CIDR<IPv4>): boolean => match(address, cidr.ip, cidr.bits)
+export const matchCIDR = (address: IPv4, cidr: CIDR<IPv4>): boolean => match(address, cidr.ip, cidr.maskLength)

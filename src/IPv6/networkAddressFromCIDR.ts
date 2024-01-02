@@ -7,7 +7,7 @@ export function networkAddressFromCIDR(address: string): IPv6 | undefined {
 	const cidr = parseCIDR(address)
 
 	if (cidr) {
-		const subnetMask = subnetMaskFromPrefixLength(cidr.bits)
+		const subnetMask = subnetMaskFromPrefixLength(cidr.maskLength)
 
 		cidr.ip.zoneId = undefined
 

@@ -1,4 +1,4 @@
-import type { IPv4 } from "./common"
+import type { IPv4 } from "../IPv4"
 import { parseCIDR } from "./parseCIDR"
 import { subnetMaskFromPrefixLength } from "./subnetMaskFromPrefixLength"
 
@@ -7,7 +7,7 @@ export function networkAddressFromCIDR(address: string): IPv4 | undefined {
 	const cidr = parseCIDR(address)
 
 	if (cidr) {
-		const subnetMaskOctets = subnetMaskFromPrefixLength(cidr.bits)
+		const subnetMaskOctets = subnetMaskFromPrefixLength(cidr.maskLength)
 
 		for (let index = 4; index--;)
 			cidr.ip[index] &= subnetMaskOctets[index]!
