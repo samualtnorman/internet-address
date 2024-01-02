@@ -60,3 +60,29 @@ function parseIntAuto(string: string): number {
 	// Always include the base 10 radix!
 	return parseInt(string, 10)
 }
+
+if (import.meta.vitest) {
+	const { describe, test, expect } = import.meta.vitest
+
+	describe(`parse()`, () => {
+		test(`standard format`, () => expect(parse(`50.251.1.32`)).toStrictEqual(fromBytes(50, 251, 1, 32)))
+		test(`hex`, () => expect(parse(`0x22.101.208.167`)).toStrictEqual(fromBytes(0x22, 101, 208, 167)))
+		test(`octal`, () => expect(parse(`6.0373.46.63`)).toStrictEqual(fromBytes(6, 0o373, 46, 63)))
+		test(`long hex`, () => expect(parse(`0xF6FB314C`)).toStrictEqual(fromBytes(0xF6, 0xFB, 0x31, 0x4C)))
+		test(`long octal`, () => expect(parse(`027227354757`)).toStrictEqual(fromBytes(186, 93, 217, 239)))
+		test(`long`, () => expect(parse(`3512666314`)).toStrictEqual(fromBytes(209, 95, 8, 202)))
+		test(`3 parts`, () => expect(parse(`172.178.1270`)).toStrictEqual(fromBytes(172, 178, 4, 246)))
+		test(`2 parts`, () => expect(parse(`25.3367299`)).toStrictEqual(fromBytes(25, 51, 97, 131)))
+
+		describe(`reject invalid IPv4`, () => {
+			test(`non-IPv4 string`, () => expect(parse(`133.89.60.foo`)).toBeUndefined())
+
+			describe(`part out of range`, () => {
+				test(`2 parts`, () => expect(parse(`244.16777216`)).toBeUndefined())
+				test(`3 parts`, () => expect(parse(`96.197.65536`)).toBeUndefined())
+			})
+
+			test(`invalid octal`, () => expect(parse(`86.08.13.97`)).toBeUndefined())
+		})
+	})
+}

@@ -6,7 +6,7 @@ import { fromBytes } from "./fromBytes"
 
 /** Special IPv4 address ranges.
   * @see https://en.wikipedia.org/wiki/Reserved_IP_addresses */
-  const SpecialRanges: RangeList<IPv4> = new Map([
+const SpecialRanges: RangeList<IPv4> = new Map([
 	[ `unspecified`, [ { ip: fromBytes(0, 0, 0, 0), maskLength: 8 } ] ],
 	[ `broadcast`, [ { ip: fromBytes(255, 255, 255, 255), maskLength: 32 } ] ],
 	// RFC3171
@@ -37,3 +37,22 @@ import { fromBytes } from "./fromBytes"
 
 /** Checks if the address corresponds to one of the special ranges. */
 export const range = (address: IPv4): StringSuggest<Range> => subnetMatch(address, SpecialRanges)
+
+if (import.meta.vitest) {
+	const { test, expect } = import.meta.vitest
+
+	test(`range()`, () => {
+		expect(range(fromBytes(0, 0, 0, 0))).toBe(`unspecified`)
+		expect(range(fromBytes(0, 1, 0, 0))).toBe(`unspecified`)
+		expect(range(fromBytes(10, 1, 0, 1))).toBe(`private`)
+		expect(range(fromBytes(100, 64, 0, 0))).toBe(`carrierGradeNat`)
+		expect(range(fromBytes(100, 127, 255, 255))).toBe(`carrierGradeNat`)
+		expect(range(fromBytes(192, 168, 2, 1))).toBe(`private`)
+		expect(range(fromBytes(224, 100, 0, 1))).toBe(`multicast`)
+		expect(range(fromBytes(169, 254, 15, 0))).toBe(`linkLocal`)
+		expect(range(fromBytes(127, 1, 1, 1))).toBe(`loopback`)
+		expect(range(fromBytes(255, 255, 255, 255))).toBe(`broadcast`)
+		expect(range(fromBytes(240, 1, 2, 3))).toBe(`reserved`)
+		expect(range(fromBytes(8, 8, 8, 8))).toBe(`unicast`)
+	})
+}

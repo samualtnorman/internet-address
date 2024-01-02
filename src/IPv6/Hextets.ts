@@ -13,5 +13,5 @@ export function fromUint16Array(uint16Array: Uint16Array): Hextets {
 	if (is(uint16Array))
 		return uint16Array
 
-	throw Error(`Uint16Array must have a length of 8`)
+	throw Error(`Uint16Array must have a length of 8, got ${uint16Array.length}`)
 }

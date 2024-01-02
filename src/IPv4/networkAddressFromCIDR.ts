@@ -1,4 +1,4 @@
-import type { IPv4 } from "../IPv4"
+import { fromBytes, type IPv4 } from "../IPv4"
 import { parseCIDR } from "./parseCIDR"
 import { subnetMaskFromPrefixLength } from "./subnetMaskFromPrefixLength"
 
@@ -14,4 +14,13 @@ export function networkAddressFromCIDR(address: string): IPv4 | undefined {
 
 		return cidr.ip
 	}
+}
+
+if (import.meta.vitest) {
+	const { test, expect } = import.meta.vitest
+
+	test(`networkAddressFromCIDR()`, () => {
+		expect(networkAddressFromCIDR(`172.0.0.1/24`)).toStrictEqual(fromBytes(172, 0, 0, 0))
+		expect(networkAddressFromCIDR(`172.0.0.1/5`)).toStrictEqual(fromBytes(168, 0, 0, 0))
+	})
 }
