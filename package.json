@@ -19,10 +19,12 @@
 	"devDependencies": {
 		"@babel/preset-env": "^7.23.6",
 		"@babel/preset-typescript": "^7.23.3",
+		"@babel/types": "^7.23.6",
 		"@rollup/plugin-babel": "^6.0.4",
 		"@rollup/plugin-node-resolve": "^15.2.3",
 		"@samual/eslint-config": "^0.0.3",
 		"@samual/lib": "0.10.0-48421e7",
+		"@types/babel__core": "^7.20.5",
 		"@types/node": "^20.10.5",
 		"eslint": "^8.56.0",
 		"rollup": "^4.9.1",

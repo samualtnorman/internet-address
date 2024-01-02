@@ -21,7 +21,7 @@ if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest
 
 	test(`broadcastAddressFromCIDR()`, () => {
-		expect(broadcastAddressFromCIDR("172.0.0.1/24")).toStrictEqual(fromBytes(172, 0, 0, 255))
-		expect(broadcastAddressFromCIDR("172.0.0.1/26")).toStrictEqual(fromBytes(172, 0, 0, 63))
+		expect(broadcastAddressFromCIDR(`172.0.0.1/24`)).toStrictEqual(fromBytes(172, 0, 0, 255))
+		expect(broadcastAddressFromCIDR(`172.0.0.1/26`)).toStrictEqual(fromBytes(172, 0, 0, 63))
 	})
 }
