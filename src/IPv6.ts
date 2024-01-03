@@ -1,13 +1,15 @@
-import type { Hextets } from "./IPv6/Hextets"
+import * as Hextets from "./IPv6/Hextets"
 import type { IPvXRangeDefaults } from "./internal"
+
+type Hextets = Hextets.Hextets
 
 export type Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo"
 
 /** An IPv6 address. */
 export type IPv6 = { hextets: Hextets, zoneId: string | undefined }
 
-export * as Hextets from "./IPv6/Hextets"
-
+// eslint-disable-next-line @typescript-eslint/consistent-type-exports
+export { Hextets }
 export { broadcastAddressFromCIDR } from "./IPv6/broadcastAddressFromCIDR"
 export { fromBytes } from "./IPv6/fromBytes"
 export { fromHextets } from "./IPv6/fromHextets"
