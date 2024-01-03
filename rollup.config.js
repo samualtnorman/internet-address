@@ -10,11 +10,8 @@ const SourceFolder = "src"
 const Minify = false
 
 export default findFiles(SourceFolder).then(foundFiles => /** @type {import("rollup").RollupOptions} */ ({
-	input: Object.fromEntries(
-		foundFiles.filter(path => path.endsWith(".ts") && !path.endsWith(".d.ts"))
-			.map(path => [ path.slice(SourceFolder.length + 1, -3), path ])
-	),
-	output: { dir: "dist", generatedCode: "es2015", interop: "auto", compact: Minify },
+	input: foundFiles.filter(path => path.endsWith(".ts") && !path.endsWith(".d.ts")),
+	output: { dir: "dist", compact: Minify, hoistTransitiveImports: false, preserveModules: true },
 	plugins: [
 		nodeResolve({ extensions: [ ".ts" ] }),
 		babel({
@@ -39,5 +36,6 @@ export default findFiles(SourceFolder).then(foundFiles => /** @type {import("rol
 			]
 		})
 	],
-	strictDeprecations: true
+	strictDeprecations: true,
+	treeshake: { moduleSideEffects: false }
 }))
