@@ -10,9 +10,9 @@ export function networkAddressFromCIDR(address: string): IPv4 | undefined {
 		const subnetMaskOctets = subnetMaskFromPrefixLength(cidr.maskLength)
 
 		for (let index = 4; index--;)
-			cidr.ip[index] &= subnetMaskOctets[index]!
+			cidr.address[index] &= subnetMaskOctets[index]!
 
-		return cidr.ip
+		return cidr.address
 	}
 }
 

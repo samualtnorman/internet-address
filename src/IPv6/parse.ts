@@ -1,5 +1,6 @@
 import type { IPv6 } from "../IPv6"
 import * as Hextets from "./Hextets"
+import { fromHextets } from "./fromHextets"
 
 /** @returns An {@link IPv6} parsed from {@link string} or `undefined` if invalid. */
 export function parse(string: string): IPv6 | undefined {
@@ -82,4 +83,19 @@ function expandIPv6(string: string): IPv6 | undefined {
 			return { hextets: Hextets.fromUint16Array(u16View), zoneId }
 		}
 	}
+}
+
+if (import.meta.vitest) {
+	const { test, expect } = import.meta.vitest
+
+	test(`parse()`, () => {
+		expect(parse(`2001:db8:F53A:0:0:0:0:1`)).toStrictEqual(fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1))
+		expect(parse(`fe80::10`)).toStrictEqual(fromHextets(0xFE_80, 0, 0, 0, 0, 0, 0, 0x10))
+		expect(parse(`2001:db8:F53A::`)).toStrictEqual(fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 0))
+		expect(parse(`::1`)).toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0, 0, 1))
+		expect(parse(`::8.8.8.8`)).toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0xFF_FF, 2056, 2056))
+		expect(parse(`::`)).toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0, 0, 0))
+		expect(parse(`::%z`)).toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0, 0, 0, `z`))
+		expect(parse(`fe80::0::1`)).toBeUndefined()
+	})
 }

@@ -13,3 +13,19 @@ export const fromBytes = (
 	]).buffer)),
 	zoneId
 })
+
+if (import.meta.vitest) {
+	const { test, expect } = import.meta.vitest
+
+	test(`fromBytes()`, () => {
+		expect(fromBytes(38, 113, 243, 182, 152, 232, 15, 25, 130, 134, 251, 156, 225, 234, 34, 103)).toStrictEqual({
+			hextets: new Uint16Array([ 0x26_71, 0xF3_B6, 0x98_E8, 0xF_19, 0x82_86, 0xFB_9C, 0xE1_EA, 0x22_67 ]),
+			zoneId: undefined
+		})
+
+		expect(fromBytes(189, 246, 221, 148, 201, 140, 71, 36, 32, 133, 174, 79, 242, 229, 156, 238, `foo`)).toStrictEqual({
+			hextets: new Uint16Array([ 0xBD_F6, 0xDD_94, 0xC9_8C, 0x47_24, 0x20_85, 0xAE_4F, 0xF2_E5, 0x9C_EE ]),
+			zoneId: `foo`
+		})
+	})
+}

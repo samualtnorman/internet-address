@@ -13,7 +13,17 @@ export function parseCIDR(addr: string): CIDR<IPv6> | undefined {
 			const ip = parse(match[1]!)
 
 			if (ip)
-				return { ip, maskLength }
+				return { address: ip, maskLength }
 		}
 	}
+}
+
+if (import.meta.vitest) {
+	const { test, expect } = import.meta.vitest
+
+	test(`parseCIDR()`, () => {
+		expect(parseCIDR(`2001:db8:f53a::1`)).toBeUndefined()
+		expect(parseCIDR(`2001:db8:f53a::1/-1`)).toBeUndefined()
+		expect(parseCIDR(`2001:db8:f53a::1/129`)).toBeUndefined()
+	})
 }

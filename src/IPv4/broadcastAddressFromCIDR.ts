@@ -11,9 +11,9 @@ export function broadcastAddressFromCIDR(address: string): IPv4 | undefined {
 		const subnetMask = subnetMaskFromPrefixLength(cidr.maskLength)
 
 		for (let index = 4; index--;)
-			cidr.ip[index] |= subnetMask[index]! ^ 0xFF
+			cidr.address[index] |= subnetMask[index]! ^ 0xFF
 
-		return cidr.ip
+		return cidr.address
 	}
 }
 

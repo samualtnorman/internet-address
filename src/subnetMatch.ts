@@ -11,17 +11,17 @@ export function subnetMatch<T extends IPv4.IPv4 | IPv6.IPv6>(
 	rangeList: RangeList<T>,
 	defaultName: StringSuggest<T extends IPv4.IPv4 ? IPv4.Range : IPv6.Range> = `unicast`
 ): StringSuggest<T extends IPv4.IPv4 ? IPv4.Range : IPv6.Range> {
-	if (IPv4.is(address)) {
+	if (address instanceof Uint8Array) {
 		for (const [ rangeName, rangeSubnets ] of rangeList) {
 			for (const subnet of rangeSubnets) {
-				if (IPv4.is(subnet.ip) && IPv4.match(address, subnet.ip, subnet.maskLength))
+				if (subnet.address instanceof Uint8Array && IPv4.match(address, subnet.address, subnet.maskLength))
 					return rangeName
 			}
 		}
 	} else {
 		for (const [ rangeName, rangeSubnets ] of rangeList) {
 			for (const subnet of rangeSubnets) {
-				if (!IPv4.is(subnet.ip) && IPv6.match(address, subnet.ip, subnet.maskLength))
+				if (!(subnet.address instanceof Uint8Array) && IPv6.match(address, subnet.address, subnet.maskLength))
 					return rangeName
 			}
 		}
