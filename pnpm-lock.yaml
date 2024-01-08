@@ -41,6 +41,9 @@ devDependencies:
   rollup:
     specifier: ^4.9.1
     version: 4.9.1
+  semver:
+    specifier: ^7.5.4
+    version: 7.5.4
   typescript:
     specifier: ^5.3.3
     version: 5.3.3
