@@ -20,12 +20,12 @@ if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest
 
 	test(`is()`, () => {
-		expect(is(new Uint16Array([ 0xB4_45, 0x89_55, 0xCC_64, 0xE3_78, 0x9A_AB, 0x7A_9D, 0x8E_9F, 0x23_92 ]))).toBe(true)
+		expect(is(new Uint16Array([ 0xB445, 0x8955, 0xCC64, 0xE378, 0x9AAB, 0x7A9D, 0x8E9F, 0x2392 ]))).toBe(true)
 		expect(is(new Uint16Array())).toBe(false)
 	})
 
 	test(`fromUint16Array()`, () => {
-		const u16View = new Uint16Array([ 0xB0_68, 0xBD_0E, 0x26_92, 0x84_22, 0xAC_DE, 0xB1_8D, 0x9C_08, 0x92_58 ])
+		const u16View = new Uint16Array([ 0xB068, 0xBD0E, 0x2692, 0x8422, 0xACDE, 0xB18D, 0x9C08, 0x9258 ])
 
 		expect(fromUint16Array(u16View)).toStrictEqual(u16View)
 		expect(() => fromUint16Array(new Uint16Array())).toThrowError()

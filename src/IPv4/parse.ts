@@ -65,6 +65,11 @@ if (import.meta.vitest) {
 	const { describe, test, expect } = import.meta.vitest
 
 	describe(`parse()`, () => {
+		expect(parse(`8.8.8.8`)).toStrictEqual(fromBytes(8, 8, 8, 8))
+		expect(parse(`1`)).toStrictEqual(fromBytes(0, 0, 0, 1))
+		expect(parse(`242.41.0247.0x23`)).toStrictEqual(fromBytes(242, 41, 0o247, 0x23))
+		expect(parse(`120.206.0370.0xCA`)).toStrictEqual(fromBytes(120, 206, 0o370, 0xCA))
+		expect(parse(`1`)).toStrictEqual(fromBytes(0, 0, 0, 1))
 		test(`standard format`, () => expect(parse(`50.251.1.32`)).toStrictEqual(fromBytes(50, 251, 1, 32)))
 		test(`hex`, () => expect(parse(`0x22.101.208.167`)).toStrictEqual(fromBytes(0x22, 101, 208, 167)))
 		test(`octal`, () => expect(parse(`6.0373.46.63`)).toStrictEqual(fromBytes(6, 0o373, 46, 63)))
@@ -83,6 +88,12 @@ if (import.meta.vitest) {
 			})
 
 			test(`invalid octal`, () => expect(parse(`86.08.13.97`)).toBeUndefined())
+			expect(parse(`256.229.119.175`)).toBeUndefined()
+			expect(parse(`202.0x5A.foo.234`)).toBeUndefined()
+			expect(parse(`256.163.10.46`)).toBeUndefined()
+			expect(parse(`113.0x34.foo.117`)).toBeUndefined()
+			expect(parse(`4999999999`)).toBeUndefined()
+			expect(parse(`-1`)).toBeUndefined()
 		})
 	})
 }

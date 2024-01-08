@@ -1,6 +1,6 @@
-import { numberToPrefix } from "../IPv4/numberToPrefix"
-import type { IPv6, Prefix } from "../IPv6"
+import { type IPv6, type Prefix } from "../IPv6"
 import { fromHextets } from "./fromHextets"
+import { numberToPrefix } from "./numberToPrefix"
 
 // TODO rename to `getSubnetMaskPrefixLength`
 

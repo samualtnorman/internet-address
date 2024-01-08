@@ -1,3 +1,4 @@
+import { IPv4 } from ".."
 import type { IPv6 } from "../IPv6"
 import * as Hextets from "./Hextets"
 import { fromHextets } from "./fromHextets"
@@ -89,13 +90,36 @@ if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest
 
 	test(`parse()`, () => {
-		expect(parse(`2001:db8:F53A:0:0:0:0:1`)).toStrictEqual(fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1))
-		expect(parse(`fe80::10`)).toStrictEqual(fromHextets(0xFE_80, 0, 0, 0, 0, 0, 0, 0x10))
-		expect(parse(`2001:db8:F53A::`)).toStrictEqual(fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 0))
+		expect(parse(`2001:db8:F53A:0:0:0:0:1`)).toStrictEqual(fromHextets(0x2001, 0xDB8, 0xF53A, 0, 0, 0, 0, 1))
+		expect(parse(`fe80::10`)).toStrictEqual(fromHextets(0xFE80, 0, 0, 0, 0, 0, 0, 0x10))
+		expect(parse(`2001:db8:F53A::`)).toStrictEqual(fromHextets(0x2001, 0xDB8, 0xF53A, 0, 0, 0, 0, 0))
 		expect(parse(`::1`)).toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0, 0, 1))
-		expect(parse(`::8.8.8.8`)).toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0xFF_FF, 2056, 2056))
+		expect(parse(`::8.8.8.8`)).toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0xFFFF, 2056, 2056))
 		expect(parse(`::`)).toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0, 0, 0))
 		expect(parse(`::%z`)).toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0, 0, 0, `z`))
+		expect(parse(`2001:db8:f53a::1%2`)).toStrictEqual(fromHextets(0x2001, 0xDB8, 0xF53A, 0, 0, 0, 0, 1, `2`))
+		expect(parse(`2001:db8:f53a::1%WAT`)).toStrictEqual(fromHextets(0x2001, 0xDB8, 0xF53A, 0, 0, 0, 0, 1, `WAT`))
+		expect(parse(`2001:db8:f53a::1%sUp`)).toStrictEqual(fromHextets(0x2001, 0xDB8, 0xF53A, 0, 0, 0, 0, 1, `sUp`))
+		expect(parse(`2001:db8:F53A::1`)).toStrictEqual(fromHextets(0x2001, 0xDB8, 0xF53A, 0, 0, 0, 0, 1))
+		expect(parse(`::ffff:192.168.1.1`)).toStrictEqual(IPv4.toIPv6(IPv4.fromBytes(192, 168, 1, 1)))
+		expect(parse(`::ffff:192.168.1.1%z`)).toStrictEqual(IPv4.toIPv6(IPv4.fromBytes(192, 168, 1, 1), `z`))
+		expect(parse(`::10.2.3.4`)).toStrictEqual(IPv4.toIPv6(IPv4.fromBytes(10, 2, 3, 4)))
+		expect(parse(`::12.34.56.78%z`)).toStrictEqual(IPv4.toIPv6(IPv4.fromBytes(12, 34, 56, 78), `z`))
+		expect(parse(`::1.1.1.1`)).toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0xFFFF, 0x101, 0x101))
+		expect(parse(`::1.2.3.4%z`)).toStrictEqual(IPv4.toIPv6(IPv4.fromBytes(1, 2, 3, 4), `z`))
 		expect(parse(`fe80::0::1`)).toBeUndefined()
+		expect(parse(`::some.nonsense`)).toBeUndefined()
+		expect(parse(`200001::1`)).toBeUndefined()
+		expect(parse(`::ffff:300.168.1.1`)).toBeUndefined()
+		expect(parse(`::ffff:300.168.1.1:0`)).toBeUndefined()
+		expect(parse(`fe80::foo`)).toBeUndefined()
+		expect(parse(`fe80::%`)).toBeUndefined()
+		expect(parse(`::ffff:222.1.41.9000`)).toBeUndefined()
+		expect(parse(`2001:db8::F53A::1`)).toBeUndefined()
+		expect(parse(`2002::2:`)).toBeUndefined()
+		expect(parse(``)).toBeUndefined()
+		expect(parse(`1`)).toBeUndefined()
+		expect(parse(`::8:8:8:8:8:8:8:8:8`)).toBeUndefined()
+		expect(parse(`::8:8:8:8:8:8:8:8:8%z`)).toBeUndefined()
 	})
 }

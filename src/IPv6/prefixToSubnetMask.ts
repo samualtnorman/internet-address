@@ -14,3 +14,48 @@ export function prefixToSubnetMask(prefix: Prefix): IPv6 {
 
 	return subnetMask
 }
+
+if (import.meta.vitest) {
+	const { test, expect } = import.meta.vitest
+
+	test(`prefixToSubnetMask()`, () => {
+		expect(prefixToSubnetMask(128))
+			.toStrictEqual(fromHextets(0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF))
+
+		expect(prefixToSubnetMask(112))
+			.toStrictEqual(fromHextets(0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0))
+
+		expect(prefixToSubnetMask(96))
+			.toStrictEqual(fromHextets(0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0, 0))
+
+		expect(prefixToSubnetMask(72))
+			.toStrictEqual(fromHextets(0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFF00, 0, 0, 0))
+
+		expect(prefixToSubnetMask(64))
+			.toStrictEqual(fromHextets(0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0, 0, 0, 0))
+
+		expect(prefixToSubnetMask(48))
+			.toStrictEqual(fromHextets(0xFFFF, 0xFFFF, 0xFFFF, 0, 0, 0, 0, 0))
+
+		expect(prefixToSubnetMask(32))
+			.toStrictEqual(fromHextets(0xFFFF, 0xFFFF, 0, 0, 0, 0, 0, 0))
+
+		expect(prefixToSubnetMask(16))
+			.toStrictEqual(fromHextets(0xFFFF, 0, 0, 0, 0, 0, 0, 0))
+
+		expect(prefixToSubnetMask(8))
+			.toStrictEqual(fromHextets(0xFF00, 0, 0, 0, 0, 0, 0, 0))
+
+		expect(prefixToSubnetMask(4))
+			.toStrictEqual(fromHextets(0xF000, 0, 0, 0, 0, 0, 0, 0))
+
+		expect(prefixToSubnetMask(2))
+			.toStrictEqual(fromHextets(0xC000, 0, 0, 0, 0, 0, 0, 0))
+
+		expect(prefixToSubnetMask(1))
+			.toStrictEqual(fromHextets(0x8000, 0, 0, 0, 0, 0, 0, 0))
+
+		expect(prefixToSubnetMask(0))
+			.toStrictEqual(fromHextets(0, 0, 0, 0, 0, 0, 0, 0))
+	})
+}
