@@ -1,3 +1,4 @@
+import type { Range } from "."
 import type { RangeList } from "./CIDR"
 import * as IPv4 from "./IPv4"
 import * as IPv6 from "./IPv6"
@@ -9,19 +10,19 @@ import type { StringSuggest } from "./internal"
 export function subnetMatch<T extends IPv4.IPv4 | IPv6.IPv6>(
 	address: T,
 	rangeList: RangeList<T>,
-	defaultName: StringSuggest<T extends IPv4.IPv4 ? IPv4.Range : IPv6.Range> = `unicast`
-): StringSuggest<T extends IPv4.IPv4 ? IPv4.Range : IPv6.Range> {
+	defaultName: StringSuggest<Range<T>> = `unicast`
+): StringSuggest<Range<T>> {
 	if (address instanceof Uint8Array) {
 		for (const [ rangeName, rangeSubnets ] of rangeList) {
 			for (const subnet of rangeSubnets) {
-				if (subnet.address instanceof Uint8Array && IPv4.match(address, subnet.address, subnet.maskLength))
+				if (subnet.address instanceof Uint8Array && IPv4.match(address, subnet.address, subnet.prefix))
 					return rangeName
 			}
 		}
 	} else {
 		for (const [ rangeName, rangeSubnets ] of rangeList) {
 			for (const subnet of rangeSubnets) {
-				if (!(subnet.address instanceof Uint8Array) && IPv6.match(address, subnet.address, subnet.maskLength))
+				if (!(subnet.address instanceof Uint8Array) && IPv6.match(address, subnet.address, subnet.prefix))
 					return rangeName
 			}
 		}
