@@ -3,7 +3,8 @@ import type { IPv4 } from "../IPv4"
 import { fromBytes } from "./fromBytes"
 import { prefixToSubnetMask } from "./prefixToSubnetMask"
 
-/** @returns Broadcast address from {@link CIDR}. */
+/** @returns Broadcast address from {@link cidr}.
+  * @example const broadcastAddress = IPv4.cidrToBroadcastAddress(CIDR.from(IPv4.fromBytes(192, 168, 0, 1), 8)) */
 export function cidrToBroadcastAddress(cidr: CIDR<IPv4>): IPv4 {
 	const subnetMask = prefixToSubnetMask(cidr.prefix)
 

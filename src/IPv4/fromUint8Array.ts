@@ -1,9 +1,11 @@
 import type { IPv4 } from "../IPv4"
 import { is } from "./is"
 
-export function fromUint8Array(u8View: Uint8Array): IPv4 {
-	if (is(u8View))
-		return u8View
+/** @returns `IPv4` from `Uint8Array`.
+  * @throws When `Uint8Array` length is not 4. */
+export function fromUint8Array(uint8Array: Uint8Array): IPv4 {
+	if (is(uint8Array))
+		return uint8Array
 
 	throw Error(`Uint8Array should have a length of 4`)
 }

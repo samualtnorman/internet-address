@@ -3,7 +3,8 @@ import type { IPvXRangeDefaults } from "./internal"
 
 type Hextets = Hextets.Hextets
 
-export type Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo"
+export type Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo" |
+	"benchmarking" | "amt" | "as112v6" | "deprecated" | "orchid2"
 
 /** An IPv6 address. */
 export type IPv6 = { hextets: Hextets, zoneId: string | undefined }

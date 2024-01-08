@@ -2,8 +2,6 @@ import { type IPv6, type Prefix } from "../IPv6"
 import { fromHextets } from "./fromHextets"
 import { numberToPrefix } from "./numberToPrefix"
 
-// TODO rename to `getSubnetMaskPrefixLength`
-
 /** @returns Number of leading ones, making sure that the rest is a solid sequence of zeros (valid netmask)
   * @returns Either the CIDR length or undefined if mask is not valid */
 export function subnetMaskToPrefix(ipv6: IPv6): Prefix | undefined {

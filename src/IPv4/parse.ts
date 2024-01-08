@@ -19,14 +19,14 @@ export function parse(string: string): IPv4 | undefined {
 	} else if ((match = /^(\d+|0x[a-f\d]+)$/i.exec(string))) {
 		const value = parseIntAuto(match[1]!)
 
-		if (!isNaN(value) && value <= 0xFF_FF_FF_FF && value >= 0)
+		if (!isNaN(value) && value <= 0xFFFF_FFFF && value >= 0)
 			return fromBytes((value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF)
 	} else if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
 		const firstOctet = parseIntAuto(match[1]!)
 		const lastOctets = parseIntAuto(match[2]!)
 
 		if (!isNaN(firstOctet) && !isNaN(lastOctets) && firstOctet <= 0xFF && firstOctet >= 0 &&
-			lastOctets <= 0xFF_FF_FF && lastOctets >= 0
+			lastOctets <= 0xFF_FFFF && lastOctets >= 0
 		)
 			return fromBytes(firstOctet, (lastOctets >> 16) & 0xFF, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF)
 	} else if ((match = /^(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)\.(\d+|0x[a-f\d]+)$/i.exec(string))) {
@@ -36,7 +36,7 @@ export function parse(string: string): IPv4 | undefined {
 
 		if (!isNaN(firstOctet) && !isNaN(secondOctet) && !isNaN(lastOctets) &&
 			firstOctet <= 0xFF && firstOctet >= 0 && secondOctet <= 0xFF &&
-			secondOctet >= 0 && lastOctets <= 0xFF_FF && lastOctets >= 0
+			secondOctet >= 0 && lastOctets <= 0xFFFF && lastOctets >= 0
 		)
 			return fromBytes(firstOctet, secondOctet, (lastOctets >> 8) & 0xFF, lastOctets & 0xFF)
 	}

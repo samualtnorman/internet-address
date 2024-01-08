@@ -1,10 +1,6 @@
 /** @private */
 export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved"
 
-/** @private */
-// eslint-disable-next-line @typescript-eslint/ban-types
-export type StringSuggest<T> = (string & {}) | T
-
 /** A generic CIDR (Classless Inter-Domain Routing) RFC1518 range matcher. @private */
 export function matchCIDR(
 	first: { [index: number]: number, length: number },
