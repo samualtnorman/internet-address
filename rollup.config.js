@@ -4,14 +4,16 @@ import babelPresetTypescript from "@babel/preset-typescript"
 import * as t from "@babel/types"
 import { babel } from "@rollup/plugin-babel"
 import { nodeResolve } from "@rollup/plugin-node-resolve"
+import terser from "@rollup/plugin-terser"
+import { cpus } from "os"
 import { findFiles } from "./node_modules/@samual/lib/findFiles.js"
 
 const SourceFolder = "src"
-const Minify = false
+const MINIFY = true
 
 export default findFiles(SourceFolder).then(foundFiles => /** @type {import("rollup").RollupOptions} */ ({
 	input: foundFiles.filter(path => path.endsWith(".ts") && !path.endsWith(".d.ts")),
-	output: { dir: "dist", compact: Minify, hoistTransitiveImports: false, preserveModules: true },
+	output: { dir: "dist", compact: MINIFY, preserveModules: true },
 	plugins: [
 		nodeResolve({ extensions: [ ".ts" ] }),
 		babel({
@@ -34,7 +36,13 @@ export default findFiles(SourceFolder).then(foundFiles => /** @type {import("rol
 					}
 				})
 			]
-		})
+		}),
+		MINIFY && terser(/** @type {Parameters<typeof terser>[0] & { maxWorkers: number }} */ ({
+			keep_classnames: true,
+			keep_fnames: true,
+			compress: { passes: Infinity },
+			maxWorkers: Math.floor(cpus().length / 2)
+		}))
 	],
 	strictDeprecations: true,
 	treeshake: { moduleSideEffects: false }

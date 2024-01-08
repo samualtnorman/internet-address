@@ -22,6 +22,7 @@
 		"@babel/types": "^7.23.6",
 		"@rollup/plugin-babel": "^6.0.4",
 		"@rollup/plugin-node-resolve": "^15.2.3",
+		"@rollup/plugin-terser": "^0.4.4",
 		"@samual/eslint-config": "^0.0.3",
 		"@samual/lib": "0.10.0-48421e7",
 		"@types/babel__core": "^7.20.5",
