@@ -235,26 +235,6 @@ test("IPv6.prototype.toIPv4Address()", () => {
 	expect(IPv6.parse("2001:db8::1").toIPv4Address()).toBeUndefined()
 })
 
-test("IPv6.prototype.range()", () => {
-	expect(IPv6.parse("::").range()).toBe("unspecified")
-	expect(IPv6.parse("fe80::1234:5678:abcd:0123").range()).toBe("linkLocal")
-	expect(IPv6.parse("ff00::1234").range()).toBe("multicast")
-	expect(IPv6.parse("::1").range()).toBe("loopback")
-	expect(IPv6.parse("fc00::").range()).toBe("uniqueLocal")
-	expect(IPv6.parse("::ffff:192.168.1.10").range()).toBe("ipv4Mapped")
-	expect(IPv6.parse("::ffff:0:192.168.1.10").range()).toBe("rfc6145")
-	expect(IPv6.parse("2002:1f63:45e8::1").range()).toBe("6to4")
-	expect(IPv6.parse("2001::4242").range()).toBe("teredo")
-	expect(IPv6.parse("2001:2::").range()).toBe("benchmarking")
-	expect(IPv6.parse("2001:3::").range()).toBe("amt")
-	expect(IPv6.parse("2001:4:112::").range()).toBe("as112v6")
-	expect(IPv6.parse("2001:10::").range()).toBe("deprecated")
-	expect(IPv6.parse("2001:20::").range()).toBe("orchid2")
-	expect(IPv6.parse("2001:db8::3210").range()).toBe("reserved")
-	expect(IPv6.parse("2001:470:8:66::1").range()).toBe("unicast")
-	expect(IPv6.parse("2001:470:8:66::1%z").range()).toBe("unicast")
-})
-
 test("process()", () => {
 	expect(IPv4.is(process("8.8.8.8"))).toBe(true)
 	expect(process("2001:db8:3312::1")).toBeInstanceOf(IPv6)
@@ -300,16 +280,7 @@ test("subnetMatch()", () => {
 })
 
 test("IPv6.prototype.prefixLengthFromSubnetMask()", () => {
-	expect(IPv6.parse("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").prefixLengthFromSubnetMask()).toBe(128)
-	expect(IPv6.parse("ffff:ffff:ffff:ffff::").prefixLengthFromSubnetMask()).toBe(64)
-	expect(IPv6.parse("ffff:ffff:ffff:ff80::").prefixLengthFromSubnetMask()).toBe(57)
-	expect(IPv6.parse("ffff:ffff:ffff::").prefixLengthFromSubnetMask()).toBe(48)
-	expect(IPv6.parse("ffff:ffff:ffff::%z").prefixLengthFromSubnetMask()).toBe(48)
-	expect(IPv6.parse("::").prefixLengthFromSubnetMask()).toBe(0)
-	expect(IPv6.parse("::%z").prefixLengthFromSubnetMask()).toBe(0)
-	expect(IPv6.parse("2001:db8::").prefixLengthFromSubnetMask()).toBeUndefined()
-	expect(IPv6.parse("ffff:0:0:ffff::").prefixLengthFromSubnetMask()).toBeUndefined()
-	expect(IPv6.parse("ffff:0:0:ffff::%z").prefixLengthFromSubnetMask()).toBeUndefined()
+
 })
 
 test("IPv6.subnetMaskFromPrefixLength()", () => {

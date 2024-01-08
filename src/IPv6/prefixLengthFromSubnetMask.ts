@@ -1,4 +1,7 @@
 import type { IPv6 } from "../IPv6"
+import { fromHextets } from "./fromHextets"
+
+// TODO rename to `getSubnetMaskPrefixLength`
 
 /** @returns Number of leading ones, making sure that the rest is a solid sequence of zeros (valid netmask)
   * @returns Either the CIDR length or undefined if mask is not valid */
@@ -37,4 +40,21 @@ export function prefixLengthFromSubnetMask(ipv6: IPv6): number | undefined {
 	}
 
 	return 128 - cidr
+}
+
+if (import.meta.vitest) {
+	const { test, expect } = import.meta.vitest
+
+	test(`prefixLengthFromSubnetMask()`, () => {
+		expect(prefixLengthFromSubnetMask(fromHextets(0xFF_FF, 0xFF_FF, 0xFF_FF, 0xFF_FF, 0xFF_FF, 0xFF_FF, 0xFF_FF, 0xFF_FF))).toBe(128)
+		expect(prefixLengthFromSubnetMask(fromHextets(0xFF_FF, 0xFF_FF, 0xFF_FF, 0xFF_FF, 0, 0, 0, 0))).toBe(64)
+		expect(prefixLengthFromSubnetMask(fromHextets(0xFF_FF, 0xFF_FF, 0xFF_FF, 0xFF_80, 0, 0, 0, 0))).toBe(57)
+		expect(prefixLengthFromSubnetMask(fromHextets(0xFF_FF, 0xFF_FF, 0xFF_FF, 0, 0, 0, 0, 0))).toBe(48)
+		expect(prefixLengthFromSubnetMask(fromHextets(0xFF_FF, 0xFF_FF, 0xFF_FF, 0, 0, 0, 0, 0, `z`))).toBe(48)
+		expect(prefixLengthFromSubnetMask(fromHextets(0, 0, 0, 0, 0, 0, 0, 0))).toBe(0)
+		expect(prefixLengthFromSubnetMask(fromHextets(0, 0, 0, 0, 0, 0, 0, 0, `z`))).toBe(0)
+		expect(prefixLengthFromSubnetMask(fromHextets(0x20_01, 0xD_B8, 0, 0, 0, 0, 0, 0))).toBeUndefined()
+		expect(prefixLengthFromSubnetMask(fromHextets(0xFF_FF, 0, 0, 0xFF_FF, 0, 0, 0, 0))).toBeUndefined()
+		expect(prefixLengthFromSubnetMask(fromHextets(0xFF_FF, 0, 0, 0xFF_FF, 0, 0, 0, 0, `z`))).toBeUndefined()
+	})
 }

@@ -1,6 +1,8 @@
 import type { IPv4 } from "../IPv4"
 import { fromBytes } from "./fromBytes"
 
+// TODO rename to `getSubnetMaskPrefixLength`
+
 /** returns a number of leading ones in IPv4 address, making sure that the rest is a solid sequence of zeros
   * (valid netmask)
   * @returns Either the CIDR length or `undefined` if mask is not valid */

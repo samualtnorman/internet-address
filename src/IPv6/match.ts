@@ -9,7 +9,7 @@ export const match = (ipv6A: IPv6, ipv6B: IPv6, bits: number): boolean =>
 if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest
 
-	test(`IPv6.prototype.match()`, () => {
+	test(`match()`, () => {
 		const address = fromHextets(0x20_01, 0xD_B8, 0xF5_3A, 0, 0, 0, 0, 1)
 
 		expect(match(address, fromHextets(0, 0, 0, 0, 0, 0, 0, 0), 0)).toBe(true)

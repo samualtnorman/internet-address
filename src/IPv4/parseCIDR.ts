@@ -23,9 +23,9 @@ if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest
 
 	test(`parseCIDR()`, () => {
-		expect(parseCIDR(`108.78.3.18/24`)).toStrictEqual({ ip: fromBytes(108, 78, 3, 18), maskLength: 24 })
-		expect(parseCIDR(`1.2.3.4/24`)).toStrictEqual({ ip: fromBytes(1, 2, 3, 4), maskLength: 24 })
-		expect(parseCIDR(`1.2.3.4/5`)).toStrictEqual({ ip: fromBytes(1, 2, 3, 4), maskLength: 5 })
+		expect(parseCIDR(`108.78.3.18/24`)).toStrictEqual({ address: fromBytes(108, 78, 3, 18), maskLength: 24 })
+		expect(parseCIDR(`1.2.3.4/24`)).toStrictEqual({ address: fromBytes(1, 2, 3, 4), maskLength: 24 })
+		expect(parseCIDR(`1.2.3.4/5`)).toStrictEqual({ address: fromBytes(1, 2, 3, 4), maskLength: 5 })
 		expect(parseCIDR(`10.5.0.1`)).toBeUndefined()
 		expect(parseCIDR(`0.0.0.0/-1`)).toBeUndefined()
 		expect(parseCIDR(`0.0.0.0/33`)).toBeUndefined()

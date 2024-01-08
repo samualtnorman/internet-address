@@ -35,6 +35,8 @@ const SpecialRanges: RangeList<IPv4> = new Map([
 	] ]
 ])
 
+// TODO rename to `getRange`
+
 /** Checks if the address corresponds to one of the special ranges. */
 export const range = (address: IPv4): StringSuggest<Range> => subnetMatch(address, SpecialRanges)
 

@@ -30,5 +30,30 @@ const SpecialRanges: RangeList<IPv6> = new Map([
 	[ `orchid2`, [ { address: fromHextets(0x20_01, 0x20, 0, 0, 0, 0, 0, 0), maskLength: 28 } ] ]
 ])
 
+// TODO rename to `getRange`
+
 /** Checks if the address corresponds to one of the special ranges. */
 export const range = (ipv6: IPv6): StringSuggest<Range> => subnetMatch(ipv6, SpecialRanges)
+
+if (import.meta.vitest) {
+	const { test, expect } = import.meta.vitest
+
+	test(`range()`, () => {
+		expect(range(fromHextets(0, 0, 0, 0, 0, 0, 0, 0))).toBe(`unspecified`)
+		expect(range(fromHextets(0xFE_80, 0, 0, 0, 0x12_34, 0x56_78, 0xAB_CD, 0x01_23))).toBe(`linkLocal`)
+		expect(range(fromHextets(0xFF_00, 0, 0, 0, 0, 0, 0, 0x12_34))).toBe(`multicast`)
+		expect(range(fromHextets(0, 0, 0, 0, 0, 0, 0, 1))).toBe(`loopback`)
+		expect(range(fromHextets(0xFC_00, 0, 0, 0, 0, 0, 0, 0))).toBe(`uniqueLocal`)
+		expect(range(fromHextets(0, 0, 0, 0, 0, 0xFF_FF, 0xC0_A8, 0x1_0A))).toBe(`ipv4Mapped`)
+		expect(range(fromHextets(0, 0, 0, 0, 0xFF_FF, 0, 0xC0_A8, 0x1_0A))).toBe(`rfc6145`)
+		expect(range(fromHextets(0x20_02, 0x1F_63, 0x45_E8, 0, 0, 0, 0, 1))).toBe(`6to4`)
+		expect(range(fromHextets(0x20_01, 0, 0, 0, 0, 0, 0, 0x42_42))).toBe(`teredo`)
+		expect(range(fromHextets(0x20_01, 2, 0, 0, 0, 0, 0, 0))).toBe(`benchmarking`)
+		expect(range(fromHextets(0x20_01, 3, 0, 0, 0, 0, 0, 0))).toBe(`amt`)
+		expect(range(fromHextets(0x20_01, 0x10, 0, 0, 0, 0, 0, 0))).toBe(`deprecated`)
+		expect(range(fromHextets(0x20_01, 0x20, 0, 0, 0, 0, 0, 0))).toBe(`orchid2`)
+		expect(range(fromHextets(0x20_01, 0xD_B8, 0, 0, 0, 0, 0, 0x32_10))).toBe(`reserved`)
+		expect(range(fromHextets(0x20_01, 0x4_70, 8, 0x66, 0, 0, 0, 1))).toBe(`unicast`)
+		expect(range(fromHextets(0x20_01, 0x4_70, 8, 0x66, 0, 0, 0, 1, `z`))).toBe(`unicast`)
+	})
+}
