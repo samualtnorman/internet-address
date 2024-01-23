@@ -13,6 +13,8 @@ const SpecialRanges: RangeList<Range, IPv6> = {
 	loopback: [ CIDR.from(fromHextets(0, 0, 0, 0, 0, 0, 0, 1), 128) ],
 	uniqueLocal: [ CIDR.from(fromHextets(0xFC00, 0, 0, 0, 0, 0, 0, 0), 7) ],
 	ipv4Mapped: [ CIDR.from(fromHextets(0, 0, 0, 0, 0, 0xFFFF, 0, 0), 96) ],
+	// RFC6666
+	discard: [ CIDR.from(fromHextets(0x100, 0, 0, 0, 0, 0, 0, 0), 64) ],
 	// RFC6145
 	rfc6145: [ CIDR.from(fromHextets(0, 0, 0, 0, 0xFFFF, 0, 0, 0), 96) ],
 	// RFC6052
@@ -21,13 +23,21 @@ const SpecialRanges: RangeList<Range, IPv6> = {
 	"6to4": [ CIDR.from(fromHextets(0x2002, 0, 0, 0, 0, 0, 0, 0), 16) ],
 	// RFC6052, RFC6146
 	teredo: [ CIDR.from(fromHextets(0x2001, 0, 0, 0, 0, 0, 0, 0), 32) ],
-	// RFC4291
-	reserved: [ CIDR.from(fromHextets(0x2001, 0xDB8, 0, 0, 0, 0, 0, 0), 32) ],
+	// RFC5180
 	benchmarking: [ CIDR.from(fromHextets(0x2001, 0x2, 0, 0, 0, 0, 0, 0), 48) ],
+	// RFC7450
 	amt: [ CIDR.from(fromHextets(0x2001, 0x3, 0, 0, 0, 0, 0, 0), 32) ],
-	as112v6: [ CIDR.from(fromHextets(0x2001, 0x4, 0x112, 0, 0, 0, 0, 0), 48) ],
+	as112v6: [
+		CIDR.from(fromHextets(0x2001, 0x4, 0x112, 0, 0, 0, 0, 0), 48),
+		CIDR.from(fromHextets(0x2620, 0x4F, 0x8000, 0, 0, 0, 0, 0), 48)
+	],
 	deprecated: [ CIDR.from(fromHextets(0x2001, 0x10, 0, 0, 0, 0, 0, 0), 28) ],
-	orchid2: [ CIDR.from(fromHextets(0x2001, 0x20, 0, 0, 0, 0, 0, 0), 28) ]
+	orchid2: [ CIDR.from(fromHextets(0x2001, 0x20, 0, 0, 0, 0, 0, 0), 28) ],
+	droneRemoteIdProtocolEntityTags: [ CIDR.from(fromHextets(0x2001, 0x30, 0, 0, 0, 0, 0, 0), 28) ],
+	reserved: [
+		CIDR.from(fromHextets(0x2001, 0, 0, 0, 0, 0, 0, 0), 23),
+		CIDR.from(fromHextets(0x2001, 0xDB8, 0, 0, 0, 0, 0, 0), 32)
+	]
 }
 
 /** Checks if the address corresponds to one of the special ranges. */
@@ -53,5 +63,8 @@ if (import.meta.vitest) {
 		expect(getRange(fromHextets(0x2001, 0xDB8, 0, 0, 0, 0, 0, 0x3210))).toBe(`reserved`)
 		expect(getRange(fromHextets(0x2001, 0x470, 8, 0x66, 0, 0, 0, 1))).toBe(`unicast`)
 		expect(getRange(fromHextets(0x2001, 0x470, 8, 0x66, 0, 0, 0, 1, `z`))).toBe(`unicast`)
+		expect(getRange(fromHextets(0x100, 0, 0, 0, 0, 0, 0, 0x42))).toBe(`discard`)
+		expect(getRange(fromHextets(0x2620, 0x4F, 0x8000, 0, 0, 0, 0, 0))).toBe(`as112v6`)
+		expect(getRange(fromHextets(0x2001, 0x30, 0, 0, 0, 0, 0, 0))).toBe(`droneRemoteIdProtocolEntityTags`)
 	})
 }

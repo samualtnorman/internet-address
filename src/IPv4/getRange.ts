@@ -31,7 +31,11 @@ const SpecialRanges: RangeList<Range, IPv4> = {
 		{ address: fromBytes(198, 51, 100, 0), prefix: 24 },
 		{ address: fromBytes(203, 0, 113, 0), prefix: 24 },
 		{ address: fromBytes(240, 0, 0, 0), prefix: 4 }
-	]
+	],
+	// RFC7534, RFC7535
+	as112: [ { address: fromBytes(192, 175, 48, 0), prefix: 24 }, { address: fromBytes(192, 31, 196, 0), prefix: 24 } ],
+	// RFC7450
+	amt: [ { address: fromBytes(192, 52, 193, 0), prefix: 24 } ]
 }
 
 export const getRange = (address: IPv4): Range => subnetMatch(SpecialRanges, address) || `unicast`
@@ -52,5 +56,7 @@ if (import.meta.vitest) {
 		expect(getRange(fromBytes(255, 255, 255, 255))).toBe(`broadcast`)
 		expect(getRange(fromBytes(240, 1, 2, 3))).toBe(`reserved`)
 		expect(getRange(fromBytes(8, 8, 8, 8))).toBe(`unicast`)
+		expect(getRange(fromBytes(192, 52, 193, 1))).toBe(`amt`)
+		expect(getRange(fromBytes(192, 175, 48, 0))).toBe(`as112`)
 	})
 }

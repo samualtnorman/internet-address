@@ -1,5 +1,6 @@
 /** @private */
-export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved"
+export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved" |
+	"benchmarking" | "amt"
 
 /** A generic CIDR (Classless Inter-Domain Routing) RFC1518 range matcher. @private */
 export function matchCIDR(
