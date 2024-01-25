@@ -121,5 +121,7 @@ if (import.meta.vitest) {
 		expect(parse(`1`)).toBeUndefined()
 		expect(parse(`::8:8:8:8:8:8:8:8:8`)).toBeUndefined()
 		expect(parse(`::8:8:8:8:8:8:8:8:8%z`)).toBeUndefined()
+		expect(parse(`FFFF::255.255.255.255`)).toStrictEqual(fromHextets(0xFFFF, 0, 0, 0, 0, 0, 0xFFFF, 0xFFFF))
+		expect(parse(`64:ff9a::0.0.0.0`)).toStrictEqual(fromHextets(0x64, 0xFF9A, 0, 0, 0, 0, 0, 0))
 	})
 }
