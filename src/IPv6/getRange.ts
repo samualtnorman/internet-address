@@ -31,7 +31,7 @@ const SpecialRanges: RangeList<Range, IPv6> = {
 }
 
 /** Checks if the address corresponds to one of the special ranges. */
-export const getRange = (ipv6: IPv6): Range | undefined => subnetMatch(SpecialRanges, ipv6)
+export const getRange = (ipv6: IPv6): Range => subnetMatch(SpecialRanges, ipv6) || `unicast`
 
 if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest

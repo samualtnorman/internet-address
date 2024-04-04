@@ -34,7 +34,7 @@ const SpecialRanges: RangeList<Range, IPv4> = {
 	]
 }
 
-export const getRange = (address: IPv4): Range | undefined => subnetMatch(SpecialRanges, address)
+export const getRange = (address: IPv4): Range => subnetMatch(SpecialRanges, address) || `unicast`
 
 if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest
