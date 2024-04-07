@@ -18,14 +18,14 @@
 	"repository": "github:samualtnorman/ipaddr.js",
 	"devDependencies": {
 		"@samual/eslint-config": "^0.0.3",
-		"@samual/lib": "0.10.0-48421e7",
+		"@samual/lib": "0.10.1",
 		"@samual/rollup-config": "0.1.0-758ff0a",
-		"@types/node": "^20.10.5",
-		"eslint": "^8.56.0",
-		"rollup": "^4.9.1",
-		"semver": "^7.5.4",
-		"typescript": "^5.3.3",
-		"vitest": "^1.1.0"
+		"@types/node": "^20.12.5",
+		"eslint": "^8.57.0",
+		"rollup": "^4.14.1",
+		"semver": "^7.6.0",
+		"typescript": "^5.4.4",
+		"vitest": "^1.4.0"
 	},
 	"engines": {
 		"node": "^18 || >=20",
