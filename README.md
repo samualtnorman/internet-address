@@ -16,12 +16,15 @@ Pulling in every module costs under 3KiB minified and gzipped. This package supp
 only need IPv4 parsing for example, it'll only cost you 1.1KiB instead of the full 3KiB.
 
 ### Browser Support
-This package is written in standard ESM using only JavaScript builtins meaning it can be imported into browsers [via a
-CDN](https://esm.sh/internet-address) without Node.js polyfills.
+This package is written in standard ESM using only JavaScript builtins meaning it can be imported into browsers via a
+CDN without Node.js polyfills:
+```js
+import { IPv4, IPv6, CIDR, process, subnetMatch } from "https://esm.sh/internet-address"
+```
 
 ### No Unnecessary Abstractions
-This utility library does not beat around the bush. An IPv4 address is an address of 4 bytes so `IPv4.parse()` returns
-you a `Uint8Array` of 4 bytes. No need for serialization, the data type is already in its basic form.
+An IPv4 address is an array of 4 bytes so `IPv4.parse()` returns you a `Uint8Array` of 4 bytes. No need for
+serialization, the data type is already in its basic form.
 
 ## Usage
 Install with `npm install internet-address`. Make sure you have `"type": "module"` in your `package.json`.
