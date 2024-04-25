@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@babel/plugin-transform-typescript@7.24.4':
+    hash: eijf6v7pe477hey6dzss5uk7ke
+    path: patches/@babel__plugin-transform-typescript@7.24.1.patch
+
 importers:
 
   .:
@@ -2749,7 +2754,7 @@ snapshots:
       '@babel/core': 7.24.4
       '@babel/helper-plugin-utils': 7.24.0
 
-  '@babel/plugin-transform-typescript@7.24.4(@babel/core@7.24.4)':
+  '@babel/plugin-transform-typescript@7.24.4(patch_hash=eijf6v7pe477hey6dzss5uk7ke)(@babel/core@7.24.4)':
     dependencies:
       '@babel/core': 7.24.4
       '@babel/helper-annotate-as-pure': 7.22.5
@@ -2881,7 +2886,7 @@ snapshots:
       '@babel/helper-validator-option': 7.23.5
       '@babel/plugin-syntax-jsx': 7.24.1(@babel/core@7.24.4)
       '@babel/plugin-transform-modules-commonjs': 7.24.1(@babel/core@7.24.4)
-      '@babel/plugin-transform-typescript': 7.24.4(@babel/core@7.24.4)
+      '@babel/plugin-transform-typescript': 7.24.4(patch_hash=eijf6v7pe477hey6dzss5uk7ke)(@babel/core@7.24.4)
 
   '@babel/regjsgen@0.8.0': {}
 

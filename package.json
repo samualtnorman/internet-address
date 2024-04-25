@@ -39,5 +39,10 @@
 		"pnpm": "^9.0.6"
 	},
 	"private": true,
-	"type": "module"
+	"type": "module",
+	"pnpm": {
+		"patchedDependencies": {
+			"@babel/plugin-transform-typescript@7.24.4": "patches/@babel__plugin-transform-typescript@7.24.1.patch"
+		}
+	}
 }
