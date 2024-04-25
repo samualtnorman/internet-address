@@ -1,7 +1,7 @@
 import type { IPv4 } from "../IPv4"
 import { fromBytes } from "./fromBytes"
 
-export enum PartFormat { Decimal, Octal }
+export const enum PartFormat { Decimal, Octal }
 
 export type Format = [ PartFormat, PartFormat, PartFormat, PartFormat ] | [ PartFormat, PartFormat, PartFormat ] |
 	[ PartFormat, PartFormat ] | [ PartFormat ]
