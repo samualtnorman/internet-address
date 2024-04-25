@@ -2,3 +2,4 @@ extends: "@samual/eslint-config/typescript.yml"
 
 rules:
   unicorn/numeric-separators-style: [ warn, hexadecimal: { groupLength: 4 } ]
+  "@typescript-eslint/brace-style": off
