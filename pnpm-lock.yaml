@@ -12,10 +12,10 @@ importers:
         specifier: ^0.0.3
         version: 0.0.3(@typescript-eslint/eslint-plugin@6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.0)(typescript@5.4.4))(eslint@8.57.0)(typescript@5.4.4))(@typescript-eslint/parser@6.21.0(eslint@8.57.0)(typescript@5.4.4))(eslint-plugin-array-func@4.0.0(eslint@8.57.0))(eslint-plugin-eslint-comments@3.2.0(eslint@8.57.0))(eslint-plugin-regexp@2.4.0(eslint@8.57.0))(eslint-plugin-unicorn@49.0.0(eslint@8.57.0))
       '@samual/lib':
-        specifier: 0.10.1
+        specifier: ^0.10.1
         version: 0.10.1
       '@samual/rollup-config':
-        specifier: 0.1.0-758ff0a
+        specifier: ^0.1.0-758ff0a
         version: 0.1.0-758ff0a(@babel/core@7.24.4)(prettier@3.2.5)(rollup@4.14.1)
       '@types/node':
         specifier: ~18.0.6
