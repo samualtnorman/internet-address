@@ -26,13 +26,13 @@
 	"devDependencies": {
 		"@samual/eslint-config": "^0.0.3",
 		"@samual/lib": "^0.10.1",
-		"@samual/rollup-config": "^0.1.0-758ff0a",
+		"@samual/rollup-config": "^0.1.0",
 		"@types/node": "~18.0.6",
 		"eslint": "^8.57.0",
-		"rollup": "^4.14.1",
+		"rollup": "^4.16.4",
 		"semver": "^7.6.0",
-		"typescript": "^5.4.4",
-		"vitest": "^1.4.0"
+		"typescript": "^5.4.5",
+		"vitest": "^1.5.2"
 	},
 	"engines": {
 		"node": "^18 || >=20",
