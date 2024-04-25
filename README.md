@@ -1,6 +1,8 @@
 # `internet-address`
 This is a tiny IPv4 and IPv6 utility library forked from [`ipaddr.js`](https://www.npmjs.com/package/ipaddr.js).
 
+Requires Node.js 18, 20 or above.
+
 ## Highlights
 - [Tree-Shaking](#tree-shaking)
 - [Small Bundle Size](#small-bundle-size)
