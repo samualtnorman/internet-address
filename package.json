@@ -7,9 +7,9 @@
 		"ipv4",
 		"ipv6"
 	],
-	"homepage": "https://github.com/samualtnorman/ipaddr.js#readme",
+	"homepage": "https://github.com/samualtnorman/internet-address#readme",
 	"bugs": {
-		"url": "https://github.com/samualtnorman/ipaddr.js/issues",
+		"url": "https://github.com/samualtnorman/internet-address/issues",
 		"email": "me@samual.uk"
 	},
 	"license": "MIT",
@@ -22,7 +22,7 @@
 		"./*": "./*.js",
 		"./*.js": "./*.js"
 	},
-	"repository": "github:samualtnorman/ipaddr.js",
+	"repository": "github:samualtnorman/internet-address",
 	"devDependencies": {
 		"@samual/eslint-config": "^0.0.3",
 		"@samual/lib": "^0.10.1",
