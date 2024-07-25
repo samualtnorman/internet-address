@@ -1,3 +1,3 @@
 #!/bin/sh
 set -ex
-tsc --project src
+tsc --project src --emitDeclarationOnly --noEmit false
