@@ -1,7 +1,7 @@
 # `internet-address`
 This is a tiny IPv4 and IPv6 utility library forked from [`ipaddr.js`](https://www.npmjs.com/package/ipaddr.js).
 
-Requires Node.js 18, 20 or above.
+Requires Node.js 18.20+, 20.10+, 22.0+, or above.
 
 ## Highlights
 - [Tree-Shaking](#tree-shaking)
@@ -11,7 +11,7 @@ Requires Node.js 18, 20 or above.
 
 ### Tree-Shaking
 `internet-address` supports tree shaking meaning you can pull in only the functionality you need versus `ipaddr.js`'s
-all or nothing approach.
+all-or-nothing approach.
 
 ### Small Bundle Size
 Pulling in every module costs under 3KiB minified and gzipped. This package supports tree shaking however meaning if you

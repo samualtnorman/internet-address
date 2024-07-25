@@ -8,7 +8,7 @@ export function cidrToNetworkAddress(cidr: CIDR<IPv4>): IPv4 {
 	const subnetMask = prefixToSubnetMask(cidr.prefix)
 
 	for (let index = 4; index--;)
-		subnetMask[index] &= cidr.address[index]!
+		subnetMask[index]! &= cidr.address[index]!
 
 	return subnetMask
 }

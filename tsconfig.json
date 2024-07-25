@@ -1,19 +1,23 @@
 {
+	"include": [ "*", "scripts/*" ],
 	"compilerOptions": {
+		"noEmit": true,
+		"lib": [ "es2023" ],
+		"types": [ "node", "@total-typescript/ts-reset" ],
+		"target": "es2022",
+		"module": "nodenext",
+		"resolveJsonModule": true,
+		"checkJs": true,
+		"skipLibCheck": true,
+		"strict": true,
 		"allowUnreachableCode": false,
 		"allowUnusedLabels": false,
+		"exactOptionalPropertyTypes": true,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitOverride": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"moduleResolution": "Node",
-		"resolveJsonModule": true,
-		"noEmit": true,
-		"checkJs": true,
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"target": "ES2022",
-		"skipLibCheck": true,
-		"module": "ESNext"
-	},
-	"include": [ "*", "scripts/**/*", "test/**/*" ]
+		"isolatedModules": true
+	}
 }

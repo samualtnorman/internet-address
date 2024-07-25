@@ -9,7 +9,7 @@ export function cidrToNetworkAddress(cidr: CIDR<IPv6>): IPv6 {
 	cidr.address.zoneId = undefined
 
 	for (let index = 16; index--;)
-		cidr.address.hextets[index] &= subnetMask.hextets[index]!
+		cidr.address.hextets[index]! &= subnetMask.hextets[index]!
 
 	return cidr.address
 }

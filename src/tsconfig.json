@@ -1,16 +1,13 @@
 {
-	"compilerOptions": {
-		"exactOptionalPropertyTypes": true,
-		"noUncheckedIndexedAccess": true,
-		"strict": true,
-		"useUnknownInCatchVariables": true,
-		"strictNullChecks": true,
-		"declaration": true,
-		"emitDeclarationOnly": true,
-		"noEmit": false,
-		"outDir": "../dist",
-		"types": [ "vitest/importMeta" ]
-	},
 	"extends": "..",
+	"compilerOptions": {
+		"declaration": true,
+		"outDir": "../dist",
+		"types": [ "@total-typescript/ts-reset", "babel-plugin-here/env", "vitest/importMeta" ],
+		"rootDir": ".",
+		"module": "es2022",
+		"moduleResolution": "bundler",
+		"lib": [ "es2022" ]
+	},
 	"include": [ "**/*" ]
 }

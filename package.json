@@ -24,25 +24,26 @@
 	},
 	"repository": "github:samualtnorman/internet-address",
 	"devDependencies": {
-		"@samual/eslint-config": "^0.0.3",
-		"@samual/lib": "^0.10.1",
-		"@samual/rollup-config": "^0.1.0",
-		"@types/node": "~18.0.6",
-		"eslint": "^8.57.0",
-		"rollup": "^4.16.4",
-		"semver": "^7.6.0",
-		"typescript": "^5.4.5",
-		"vitest": "^1.5.2"
+		"@samual/lib": "^0.11.0",
+		"@samual/rollup-config": "^0.1.1",
+		"@total-typescript/ts-reset": "^0.5.1",
+		"@types/node": "~18.19.42",
+		"@types/semver": "^7.5.8",
+		"babel-plugin-here": "^1.0.1",
+		"rollup": "^4.19.0",
+		"semver": "^7.6.3",
+		"typescript": "^5.5.4",
+		"vitest": "^2.0.4"
 	},
 	"engines": {
-		"node": "^18 || >=20",
-		"pnpm": "^9.0.6"
+		"node": "^18.20 || ^20.10 || >=22",
+		"pnpm": "^9"
 	},
 	"private": true,
 	"type": "module",
 	"pnpm": {
 		"patchedDependencies": {
-			"@babel/plugin-transform-typescript@7.24.4": "patches/@babel__plugin-transform-typescript@7.24.1.patch"
+			"@babel/plugin-transform-typescript@7.24.8": "patches/@babel__plugin-transform-typescript@7.24.1.patch"
 		}
 	}
 }
