@@ -1,6 +1,6 @@
 {
 	"name": "internet-address",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"description": "Parse, query, manipulate, and serialize IPv4/6 addresses.",
 	"keywords": [
 		"ip",
