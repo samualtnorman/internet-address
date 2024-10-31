@@ -1,3 +1,5 @@
+/** @private @module */
+
 /** @private */
 export type IPvXRangeDefaults = "unicast" | "unspecified" | "multicast" | "linkLocal" | "loopback" | "reserved" |
 	"benchmarking" | "amt"
