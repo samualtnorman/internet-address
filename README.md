@@ -36,4 +36,4 @@ Import the utilities with:
 import { IPv4, IPv6, CIDR, process, subnetMatch } from "internet-address"
 ```
 
-Documentation can be found on [TS Docs](https://tsdocs.dev/docs/internet-address/modules/IPv4).
+[View full documentation.](https://samualtnorman.github.io/internet-address/)
