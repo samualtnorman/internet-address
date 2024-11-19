@@ -35,5 +35,6 @@ Import the utilities with:
 ```js
 import { IPv4, IPv6, CIDR, process, subnetMatch } from "internet-address"
 ```
-
-[View full documentation.](https://samualtnorman.github.io/internet-address/)
+---
+- [View full documentation.](https://samualtnorman.github.io/internet-address/)
+- [View demo using this package.](https://samualtnorman.github.io/ipv4-formatter/)
