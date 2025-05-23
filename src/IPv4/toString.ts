@@ -20,7 +20,13 @@ export const toString = (
 			part = (part * 256) + address[index]!
 	}
 
-	return partFormat ? `0${part.toString(8)}` : String(part)
+	return partFormat == PartFormat.Decimal ?
+		String(part)
+	: partFormat == PartFormat.Octal ?
+		`0${part.toString(8)}`
+	: partFormat == PartFormat.UpperHexadecimal ?
+		`0x${part.toString(16).toUpperCase()}`
+	: `0x${part.toString(16)}`
 }).join(`.`)
 
 if (import.meta.vitest) {
