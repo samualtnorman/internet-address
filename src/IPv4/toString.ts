@@ -1,7 +1,7 @@
 import type { IPv4 } from "../IPv4"
 import { fromBytes } from "./fromBytes"
 
-export const enum PartFormat { Decimal, Octal }
+export const enum PartFormat { Decimal, Octal, UpperHexadecimal, LowerHexadecimal }
 
 export type Format = [ PartFormat, PartFormat, PartFormat, PartFormat ] | [ PartFormat, PartFormat, PartFormat ] |
 	[ PartFormat, PartFormat ] | [ PartFormat ]
@@ -59,5 +59,15 @@ if (import.meta.vitest) {
 		expect(toString(fromBytes(123, 101, 84, 2), [ PartFormat.Octal, PartFormat.Decimal ])).toBe(`0173.6640642`)
 		expect(toString(fromBytes(217, 39, 234, 145), [ PartFormat.Decimal ])).toBe(`3643271825`)
 		expect(toString(fromBytes(172, 164, 134, 169), [ PartFormat.Octal ])).toBe(`025451103251`)
+
+		expect(toString(
+			fromBytes(160, 189, 42, 121),
+			[ PartFormat.UpperHexadecimal, PartFormat.UpperHexadecimal ]
+		)).toBe(`0xA0.0xBD2A79`)
+
+		expect(toString(
+			fromBytes(160, 189, 42, 121),
+			[ PartFormat.LowerHexadecimal, PartFormat.LowerHexadecimal ]
+		)).toBe(`0xa0.0xbd2a79`)
 	})
 }
