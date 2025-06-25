@@ -17,11 +17,6 @@
 	"contributors": [
 		"Samual Norman <me@samual.uk> (https://samual.uk/)"
 	],
-	"exports": {
-		".": "./default.js",
-		"./*": "./*.js",
-		"./*.js": "./*.js"
-	},
 	"repository": "github:samualtnorman/internet-address",
 	"devDependencies": {
 		"@samual/lib": "^0.13.0",
