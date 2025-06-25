@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   '@babel/plugin-transform-typescript':
-    hash: eijf6v7pe477hey6dzss5uk7ke
+    hash: d1b16ce1448f9b6b3669b9cacffd23c3d0dde7e79a57afc5c26d734f74a77ff1
     path: patches/@babel__plugin-transform-typescript.patch
 
 importers:
@@ -2243,7 +2243,7 @@ snapshots:
       '@babel/core': 7.24.9
       '@babel/helper-plugin-utils': 7.25.9
 
-  '@babel/plugin-transform-typescript@7.25.9(patch_hash=eijf6v7pe477hey6dzss5uk7ke)(@babel/core@7.24.9)':
+  '@babel/plugin-transform-typescript@7.25.9(patch_hash=d1b16ce1448f9b6b3669b9cacffd23c3d0dde7e79a57afc5c26d734f74a77ff1)(@babel/core@7.24.9)':
     dependencies:
       '@babel/core': 7.24.9
       '@babel/helper-annotate-as-pure': 7.25.9
@@ -2366,7 +2366,7 @@ snapshots:
       '@babel/helper-validator-option': 7.25.9
       '@babel/plugin-syntax-jsx': 7.25.9(@babel/core@7.24.9)
       '@babel/plugin-transform-modules-commonjs': 7.25.9(@babel/core@7.24.9)
-      '@babel/plugin-transform-typescript': 7.25.9(patch_hash=eijf6v7pe477hey6dzss5uk7ke)(@babel/core@7.24.9)
+      '@babel/plugin-transform-typescript': 7.25.9(patch_hash=d1b16ce1448f9b6b3669b9cacffd23c3d0dde7e79a57afc5c26d734f74a77ff1)(@babel/core@7.24.9)
     transitivePeerDependencies:
       - supports-color
 
