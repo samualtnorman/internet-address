@@ -1,4 +1,4 @@
-import { CIDR } from ".."
+import { CIDR } from "../default"
 import type { IPv4 } from "../IPv4"
 import { fromBytes } from "./fromBytes"
 import { match } from "./match"

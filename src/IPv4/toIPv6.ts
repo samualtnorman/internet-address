@@ -1,5 +1,5 @@
 import type { IPv4 } from "../IPv4"
-import { IPv6 } from ".."
+import { IPv6 } from "../default"
 import { fromBytes } from "./fromBytes"
 
 /** Converts this IPv4 address to an IPv4-mapped IPv6 address. */

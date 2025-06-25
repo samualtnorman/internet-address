@@ -1,4 +1,4 @@
-import { IPv4 } from ".."
+import { IPv4 } from "../default"
 import type { IPv6 } from "../IPv6"
 import * as Hextets from "./Hextets"
 import { fromHextets } from "./fromHextets"

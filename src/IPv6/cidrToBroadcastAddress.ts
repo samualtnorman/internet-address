@@ -1,4 +1,4 @@
-import { CIDR } from ".."
+import { CIDR } from "../default"
 import type { IPv6 } from "../IPv6"
 import { fromHextets } from "./fromHextets"
 import { prefixToSubnetMask } from "./prefixToSubnetMask"

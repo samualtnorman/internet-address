@@ -1,6 +1,6 @@
 import { fromHextets, type IPv6 } from "../IPv6"
 import { prefixToSubnetMask } from "./prefixToSubnetMask"
-import { CIDR } from ".."
+import { CIDR } from "../default"
 
 /** @returns An {@link IPv6} from {@link CIDR} */
 export function cidrToNetworkAddress(cidr: CIDR<IPv6>): IPv6 {

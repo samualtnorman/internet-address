@@ -18,7 +18,7 @@
 		"Samual Norman <me@samual.uk> (https://samual.uk/)"
 	],
 	"exports": {
-		".": "./index.js",
+		".": "./default.js",
 		"./*": "./*.js",
 		"./*.js": "./*.js"
 	},
