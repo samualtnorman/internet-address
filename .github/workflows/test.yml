@@ -16,3 +16,5 @@ jobs:
     - { name: Setup pnpm, uses: pnpm/action-setup@v4, with: { version: ^10, run_install: true } }
     - run: scripts/test.sh
     - run: scripts/package.sh
+    - run: scripts/emit-readme.js npm 1> /dev/null
+    - run: scripts/emit-readme.js jsr 1> /dev/null
