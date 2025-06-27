@@ -22,7 +22,7 @@ Requires Node.js 20.10+, 22.0+, 24.0+, or above.
 - [No Unnecessary Abstractions](#no-unnecessary-abstractions)
 
 ### Tree-Shaking
-`internet-address` supports tree shaking meaning you can pull in only the functionality you need versus `ipaddr.js`'s
+`\{packageName\}` supports tree shaking meaning you can pull in only the functionality you need versus `ipaddr.js`'s
 all-or-nothing approach.
 
 ### Small Bundle Size
