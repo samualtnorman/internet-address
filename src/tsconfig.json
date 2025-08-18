@@ -7,7 +7,9 @@
 		"rootDir": ".",
 		"module": "es2022",
 		"moduleResolution": "bundler",
-		"lib": [ "es2022" ]
+		"lib": [ "es2022" ],
+		"isolatedDeclarations": true,
+		"checkJs": false
 	},
 	"include": [ "**/*" ]
 }

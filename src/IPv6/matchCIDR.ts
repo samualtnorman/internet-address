@@ -3,7 +3,7 @@ import type { IPv6 } from "../IPv6"
 import { fromHextets } from "./fromHextets"
 import { match } from "./match"
 
-export const matchCIDR = (ipv6: IPv6, cidr: CIDR<IPv6>) => match(ipv6, cidr.address, cidr.prefix)
+export const matchCIDR = (ipv6: IPv6, cidr: CIDR<IPv6>): boolean => match(ipv6, cidr.address, cidr.prefix)
 
 if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest

@@ -10,7 +10,7 @@ export function matchCIDR(
 	second: { [index: number]: number, length: number },
 	partSize: number,
 	cidrBits: number
-) {
+): boolean {
 	if (first.length != second.length)
 		throw Error(`Cannot match CIDR for objects with different lengths`)
 
