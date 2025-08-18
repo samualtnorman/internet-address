@@ -3,7 +3,7 @@ import { findFiles } from "@samual/lib/findFiles"
 export const getExports = async (
 	/** @type {string} */ queryFileExtension,
 	/** @type {string} */ outputFileExtension = queryFileExtension
-) => ({
+) => /** @type {Record<string, string>} */ ({
 	".": `./default${outputFileExtension}`,
 	...Object.fromEntries(
 		(await findFiles(`dist`))
