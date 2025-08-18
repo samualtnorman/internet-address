@@ -41,9 +41,9 @@ An IPv4 address is an array of 4 bytes so `IPv4.parse()` returns you a `Uint8Arr
 serialization, the data type is already in its basic form.
 
 ## Usage
-\(if (target == `npm`) {\)Install with `npm install \{packageName\}`. Make sure you have `"type": "module"` in your `package.json`.\(}\)
+\(if (target == `npm`) {\)Install with `npm install \{packageName\}`. Make sure you have `"type": "module"` in your `package.json`.
 
-Import the utilities with:
+\(}\)Import the utilities with:
 ```js
 import { IPv4, IPv6, CIDR, process, subnetMatch } from "\{packageName\}"
 ```
