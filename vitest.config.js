@@ -1,1 +1,1 @@
-/** @type {import("vitest/config").UserConfig} */ export default { test: { includeSource: [ "src/**/*.ts" ] } }
+/** @type {import("vite").UserConfig} */ export default { test: { includeSource: [ "src/**/*.ts" ] } }

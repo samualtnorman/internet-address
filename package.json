@@ -34,6 +34,7 @@
 		"typedoc-plugin-mdn-links": "^3.3.8",
 		"typedoc-plugin-version-header": "^1.0.0",
 		"typescript": "^5.9.3",
+		"vite": "^7.2.4",
 		"vitest": "^4.0.14"
 	},
 	"engines": {

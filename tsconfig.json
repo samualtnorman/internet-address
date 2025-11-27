@@ -3,7 +3,7 @@
 	"compilerOptions": {
 		"noEmit": true,
 		"lib": [ "es2023" ],
-		"types": [ "node", "@total-typescript/ts-reset" ],
+		"types": [ "node", "@total-typescript/ts-reset", "vitest/config" ],
 		"target": "es2022",
 		"module": "nodenext",
 		"resolveJsonModule": true,
