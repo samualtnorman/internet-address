@@ -3,7 +3,7 @@ import { is } from "./is"
 
 /** @returns `IPv4` from `Uint8Array`.
   * @throws When `Uint8Array` length is not 4. */
-export function fromUint8Array(uint8Array: Uint8Array): IPv4 {
+export function fromUint8Array<TArrayBuffer extends ArrayBuffer>(uint8Array: Uint8Array<TArrayBuffer>): IPv4<TArrayBuffer> {
 	if (is(uint8Array))
 		return uint8Array
 

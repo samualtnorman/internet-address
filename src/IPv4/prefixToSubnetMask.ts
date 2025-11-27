@@ -3,7 +3,7 @@ import type { Prefix } from "../IPv6"
 import { fromBytes } from "./fromBytes"
 
 /** @returns Subnet mask in IPv4 format given the prefix length */
-export function prefixToSubnetMask(prefix: Prefix): IPv4 {
+export function prefixToSubnetMask(prefix: Prefix): IPv4<ArrayBuffer> {
 	const address = fromBytes(0, 0, 0, 0)
 	const filledOctetCount = Math.floor(prefix / 8)
 

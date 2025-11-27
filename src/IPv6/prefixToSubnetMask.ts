@@ -2,7 +2,7 @@ import type { IPv6, Prefix } from "../IPv6"
 import { fromHextets } from "./fromHextets"
 
 /** A utility function to return subnet mask in IPv6 format given the prefix length */
-export function prefixToSubnetMask(prefix: Prefix): IPv6 {
+export function prefixToSubnetMask(prefix: Prefix): IPv6<ArrayBuffer> {
 	const subnetMask = fromHextets(0, 0, 0, 0, 0, 0, 0, 0)
 	const filledHextetCount = Math.floor(prefix / 16)
 

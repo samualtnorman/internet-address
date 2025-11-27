@@ -4,7 +4,7 @@ import { fromHextets } from "./fromHextets"
 import { prefixToSubnetMask } from "./prefixToSubnetMask"
 
 /** @returns Broadcast adress from parsed CIDR or `undefined` if invalid CIDR string */
-export function cidrToBroadcastAddress(cidr: CIDR<IPv6>): IPv6 {
+export function cidrToBroadcastAddress(cidr: CIDR<IPv6>): IPv6<ArrayBuffer> {
 	const subnetMask = prefixToSubnetMask(cidr.prefix)
 
 	for (let index = 16; index--;)

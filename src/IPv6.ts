@@ -1,14 +1,14 @@
 import * as Hextets from "./IPv6/Hextets"
 import type { IPvXRangeDefaults } from "./internal"
 
-type Hextets = Hextets.Hextets
+type Hextets<TArrayBuffer extends ArrayBufferLike = ArrayBufferLike> = Hextets.Hextets<TArrayBuffer>
 
 export type Range = IPvXRangeDefaults | "uniqueLocal" | "ipv4Mapped" | "rfc6145" | "rfc6052" | "6to4" | "teredo" |
 	"benchmarking" | "amt" | "as112v6" | "deprecated" | "orchid2" | "as112v6" | "orchid2" |
 	"droneRemoteIdProtocolEntityTags" | "discard"
 
 /** An IPv6 address. */
-export type IPv6 = { hextets: Hextets, zoneId: string | undefined }
+export type IPv6<TArrayBuffer extends ArrayBufferLike = ArrayBufferLike> = { hextets: Hextets<TArrayBuffer>, zoneId: string | undefined }
 
 export type Prefix = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 |
 	22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 |

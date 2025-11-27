@@ -2,7 +2,7 @@ import type { IPv4 } from "../IPv4"
 import { fromBytes } from "./fromBytes"
 
 /** @returns Parsed IPv4 address or `undefined` if invalid. */
-export function parse(string: string): IPv4 | undefined {
+export function parse(string: string): IPv4<ArrayBuffer> | undefined {
 	let match
 
 	// parseInt recognizes all that octal & hexadecimal weirdness for us

@@ -1,6 +1,6 @@
 import type { IPv4 } from "../IPv4"
 
-export const is = (ip: Uint8Array): ip is IPv4 => ip.length == 4
+export const is = <TArrayBuffer extends ArrayBufferLike>(ip: Uint8Array<TArrayBuffer>): ip is IPv4<TArrayBuffer> => ip.length == 4
 
 if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest

@@ -5,7 +5,7 @@ import { numberIsPrefix } from "./numberIsPrefix"
 import { parse } from "./parse"
 
 /** Parses the string as an IPv4 Address with CIDR Notation. */
-export function parseCIDR(address: string): CIDR<IPv4> | undefined {
+export function parseCIDR(address: string): CIDR<IPv4<ArrayBuffer>> | undefined {
 	const match = /^(.+)\/(\d+)$/.exec(address)
 
 	if (match) {

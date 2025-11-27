@@ -5,7 +5,7 @@ import { prefixToSubnetMask } from "./prefixToSubnetMask"
 
 /** @returns Broadcast address from {@link cidr}.
   * @example const broadcastAddress = IPv4.cidrToBroadcastAddress(CIDR.from(IPv4.fromBytes(192, 168, 0, 1), 8)) */
-export function cidrToBroadcastAddress(cidr: CIDR<IPv4>): IPv4 {
+export function cidrToBroadcastAddress<TArrayBuffer extends ArrayBufferLike>(cidr: CIDR<IPv4<TArrayBuffer>>): IPv4<ArrayBuffer> {
 	const subnetMask = prefixToSubnetMask(cidr.prefix)
 
 	for (let index = 4; index--;)

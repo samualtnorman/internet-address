@@ -5,7 +5,7 @@ import { subnetMatch } from "../subnetMatch"
 import { fromHextets } from "./fromHextets"
 
 /** Special IPv6 ranges */
-const SpecialRanges: RangeList<Range, IPv6> = {
+const SpecialRanges: RangeList<Range, IPv6<ArrayBuffer>> = {
 	// RFC4291, here and after
 	unspecified: [ CIDR.from(fromHextets(0, 0, 0, 0, 0, 0, 0, 0), 128) ],
 	linkLocal: [ CIDR.from(fromHextets(0xFE80, 0, 0, 0, 0, 0, 0, 0), 10) ],

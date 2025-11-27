@@ -2,14 +2,16 @@
 declare const HextetsTag: unique symbol
 
 /** Eight big-endian 16-bit unsigned integers. */
-export type Hextets = Uint16Array & { [HextetsTag]: typeof HextetsTag }
+export type Hextets<TArrayBuffer extends ArrayBufferLike = ArrayBufferLike> =
+	Uint16Array<TArrayBuffer> & { [HextetsTag]: typeof HextetsTag }
 
 /** @returns Whether the {@link uint16Array} has a length of 8. */
-export const is = (uint16Array: Uint16Array): uint16Array is Hextets => uint16Array.length == 8
+export const is = <TArrayBuffer extends ArrayBufferLike>(uint16Array: Uint16Array<TArrayBuffer>):
+	uint16Array is Hextets<TArrayBuffer> => uint16Array.length == 8
 
 /** @returns A {@link Hextets} object from {@link uint16Array}.
   * @throws If {@link uint16Array} does not have a length of 8. */
-export function fromUint16Array(uint16Array: Uint16Array): Hextets {
+export function fromUint16Array<TArrayBuffer extends ArrayBufferLike>(uint16Array: Uint16Array<TArrayBuffer>): Hextets<TArrayBuffer> {
 	if (is(uint16Array))
 		return uint16Array
 

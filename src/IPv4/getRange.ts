@@ -5,7 +5,7 @@ import { fromBytes } from "./fromBytes"
 
 /** Special IPv4 address ranges.
   * @see https://en.wikipedia.org/wiki/Reserved_IP_addresses */
-const SpecialRanges: RangeList<Range, IPv4> = {
+const SpecialRanges: RangeList<Range, IPv4<ArrayBuffer>> = {
 	unspecified: [ { address: fromBytes(0, 0, 0, 0), prefix: 8 } ],
 	broadcast: [ { address: fromBytes(255, 255, 255, 255), prefix: 32 } ],
 	// RFC3171

@@ -5,10 +5,10 @@ import type * as IPv6 from "./IPv6"
 import { fromHextets as ipv6FromHextets } from "./IPv6/fromHextets"
 import { toString as ipv6ToString } from "./IPv6/toString"
 
-type IPv4 = IPv4.IPv4
-type IPv6 = IPv6.IPv6
+type IPv4<TArrayBuffer extends ArrayBufferLike = ArrayBufferLike> = IPv4.IPv4<TArrayBuffer>
+type IPv6<TArrayBuffer extends ArrayBufferLike = ArrayBufferLike> = IPv6.IPv6<TArrayBuffer>
 
-export type Prefix<T extends IPv4 | IPv6> = T extends IPv4 ? IPv4.Prefix : IPv6.Prefix
+export type Prefix<T extends IPv4 | IPv6> = T extends IPv4<any> ? IPv4.Prefix : IPv6.Prefix
 export type CIDR<T extends IPv4 | IPv6> = { address: T, prefix: Prefix<T> }
 export type RangeList<TRange extends string, TIP extends IPv4 | IPv6> = { [K in TRange]?: CIDR<TIP>[] }
 

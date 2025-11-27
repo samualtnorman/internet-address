@@ -4,7 +4,7 @@ import { fromHextets } from "./fromHextets"
 import { getRange } from "./getRange"
 
 /** @returns IPv4 address of IPv4-mapped IPv6 address or `undefined` if it is not. */
-export function toIPv4(address: IPv6): IPv4.IPv4 | undefined {
+export function toIPv4(address: IPv6): IPv4.IPv4<ArrayBuffer> | undefined {
 	if (getRange(address) == `ipv4Mapped`) {
 		const u8View = new Uint8Array(address.hextets.buffer)
 
