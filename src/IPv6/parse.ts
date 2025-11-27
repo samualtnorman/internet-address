@@ -4,7 +4,7 @@ import * as Hextets from "./Hextets"
 import { fromHextets } from "./fromHextets"
 
 /** @returns An {@link IPv6} parsed from {@link string} or `undefined` if invalid. */
-export function parse(string: string): IPv6 | undefined {
+export function parse(string: string): IPv6<ArrayBuffer> | undefined {
 	if (!string.includes(`:`))
 		return
 
@@ -43,7 +43,7 @@ export function parse(string: string): IPv6 | undefined {
 }
 
 /** Expand `::` in an IPv6 address or address part consisting of `parts` groups. */
-function expandIPv6(string: string): IPv6 | undefined {
+function expandIPv6(string: string): IPv6<ArrayBuffer> | undefined {
 	// More than one '::' means invalid adddress
 	if (!string.includes(`::`, string.indexOf(`::`) + 1)) {
 		const zoneId = /%([\da-z]+)/i.exec(string)?.[1]
