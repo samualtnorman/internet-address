@@ -3,15 +3,13 @@ import { prefixToSubnetMask } from "./prefixToSubnetMask"
 import { CIDR } from "../default"
 
 /** @returns An {@link IPv6} from {@link CIDR} */
-export function cidrToNetworkAddress(cidr: CIDR<IPv6>): IPv6 {
+export function cidrToNetworkAddress(cidr: CIDR<IPv6>): IPv6<ArrayBuffer> {
 	const subnetMask = prefixToSubnetMask(cidr.prefix)
 
-	cidr.address.zoneId = undefined
-
 	for (let index = 16; index--;)
-		cidr.address.hextets[index]! &= subnetMask.hextets[index]!
+		subnetMask.hextets[index]! &= cidr.address.hextets[index]!
 
-	return cidr.address
+	return subnetMask
 }
 
 if (import.meta.vitest) {
