@@ -9,7 +9,7 @@ makeDirectorySync("dist", { recursive: true })
 
 writeFileSync(
 	"dist/jsr.json",
-	JSON.stringify({ name: `@sn/ip-address`, version, license, exports: await getExports(`.ts`) }, undefined, "\t")
+	JSON.stringify({ name: `@sn/ip-address`, version, license, exports: await getExports(`.d.ts`, `.js`) }, undefined, "\t")
 )
 
 process.exit()
